@@ -1,44 +1,34 @@
 import json
+import pymysql
 
+def lambda_handler(event, context):
+    try:
+        connection = pymysql.connect(
+            host='localhost',
+            user='root',
+            password='osmich05',
+            db='library',
+            cursorclass=pymysql.cursors.DictCursor
+        )
+        user = json.loads(event['body'])
+        user_id = event['pathParameters']['id_user']
 
-# import requests
-def lambda_handler(event, __):
-    print(event)
-    """Sample pure Lambda function
+        with connection.cursor() as cursor:
+            sql = """UPDATE users SET name = %s, last_name = %s, second_lastname = %s, email = %s, password = %s, phone = %s, id_rol = %s, status = %s WHERE id_user = %s"""
+            cursor.execute(sql, (
+                user['name'], user['last_name'], user.get('second_lastname', None), user['email'], user['password'],
+                user['phone'], user['id_rol'], user['status'], user_id))
+            connection.commit()
 
-    Parameters
-    ----------
-    event: dict, required
-        API Gateway Lambda Proxy Input Format
-
-        Event doc: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html#api-gateway-simple-proxy-for-lambda-input-format
-
-    context: object, required
-        Lambda Context runtime methods and attributes
-
-        Context doc: https://docs.aws.amazon.com/lambda/latest/dg/python-context-object.html
-
-    Returns
-    ------
-    API Gateway Lambda Proxy Output Format: dict
-
-        Return doc: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html
-    """
-
-    # try:
-    #     ip = requests.get("http://checkip.amazonaws.com/")
-    # except requests.RequestException as e:
-    #     # Send some context about this error to Lambda Logs
-    #     print(e)
-
-    #     raise e
-
-    return {
-        "statusCode": 200,
-        "body": json.dumps({
-            "nombre_completo": "Andrea Michelle Estrada Hernandez",
-            "grado": "9",
-            "grupo": "B",
-            # "location": ip.text.replace("\n", "")
-        }),
-    }
+        return {
+            'statusCode': 200,
+            'body': json.dumps('Usuario modificado correctamente')
+        }
+    except Exception as e:
+        return {
+            'statusCode': 500,
+            'body': json.dumps({'error': str(e)})
+        }
+    finally:
+        if connection:
+            connection.close()

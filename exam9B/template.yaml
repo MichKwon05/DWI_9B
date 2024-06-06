@@ -195,6 +195,7 @@ Resources:
             RestApiId: !Ref RentaApi
             Path: /baja_renta/{id}
             Method: patch
+
   CreateBookFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -210,6 +211,7 @@ Resources:
           Properties:
             Path: /create_book
             Method: post
+
   UpdateBookFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -225,6 +227,22 @@ Resources:
           Properties:
             Path: /update_book/{id_book}
             Method: put
+
+  PatchBookFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: book/
+      Handler: patch_book.lambda_handler
+      Runtime: python3.12
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Architectures:
+        - x86_64
+      Events:
+        PatchBook:
+          Type: Api
+          Properties:
+            Path: /update_book_status/{id_book}
+            Method: patch
 
 Outputs:
   HelloWorldApi:

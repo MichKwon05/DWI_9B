@@ -77,6 +77,23 @@ Resources:
             Path: /insert_rol
             Method: post
 
+  GetRolAllFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: get_roles/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Architectures:
+        - x86_64
+      Events:
+        GetRoles:
+          Type: Api
+          Properties:
+            RestApiId: !Ref UserApi
+            Path: /getAll
+            Method: get
+
   InsertUserFunction:
     Type: AWS::Serverless::Function
     Properties:

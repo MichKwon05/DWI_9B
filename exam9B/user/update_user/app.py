@@ -2,7 +2,6 @@ import json
 import pymysql
 from utils.database import conn, logger
 
-
 def lambda_handler(event):
     try:
 

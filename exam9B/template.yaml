@@ -46,6 +46,18 @@ Resources:
       Name: RolApi
       StageName: Dev
 
+  RentaApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: RentaApi
+      StageName: Dev
+
+  BookApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: BookApi
+      StageName: Dev
+
   HelloWorldFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -143,7 +155,7 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref UserApi
-            Path: /get{id}
+            Path: /get/{id}
             Method: get
 
   PatchStatusUserFunction:
@@ -210,6 +222,7 @@ Resources:
         CreateBook:
           Type: Api
           Properties:
+            RestApiId: !Ref BookApi
             Path: /create_book
             Method: post
 
@@ -226,6 +239,7 @@ Resources:
         UpdateBook:
           Type: Api
           Properties:
+            RestApiId: !Ref BookApi
             Path: /update_book/{id_book}
             Method: put
 
@@ -242,6 +256,7 @@ Resources:
         PatchBook:
           Type: Api
           Properties:
+            RestApiId: !Ref BookApi
             Path: /update_book_status/{id_book}
             Method: patch
 
@@ -255,7 +270,7 @@ Resources:
       Architectures:
         - x86_64
       Events:
-        GetUsers:
+        GetBooks:
           Type: Api
           Properties:
             RestApiId: !Ref BookApi
@@ -272,20 +287,111 @@ Resources:
       Architectures:
         - x86_64
       Events:
-        GetUserById:
+        GetBookById:
           Type: Api
           Properties:
             RestApiId: !Ref BookApi
-            Path: /get{id}
+            Path: /get/{id}
             Method: get
 
 Outputs:
   HelloWorldApi:
-    Description: "API Gateway endpoint URL for Prod stage for Hello World function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/"
+    Description: "API Gateway endpoint URL for Dev stage for Hello World function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/hello/"
   HelloWorldFunction:
     Description: "Hello World Lambda Function ARN"
     Value: !GetAtt HelloWorldFunction.Arn
   HelloWorldFunctionIamRole:
     Description: "Implicit IAM Role created for Hello World function"
     Value: !GetAtt HelloWorldFunctionRole.Arn
+
+  InsertRolAllFunction:
+    Description: "Insert Rol Lambda Function ARN"
+    Value: !GetAtt InsertRolAllFunction.Arn
+  InsertRolAllFunctionApi:
+    Description: "API Gateway endpoint URL for Dev stage for Insert Rol function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/insert_rol/"
+
+  InsertUserFunction:
+    Description: "Insert User Lambda Function ARN"
+    Value: !GetAtt InsertUserFunction.Arn
+  InsertUserFunctionApi:
+    Description: "API Gateway endpoint URL for Dev stage for Insert User function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/insert_user/"
+
+  UpdateUserFunction:
+    Description: "Update User Lambda Function ARN"
+    Value: !GetAtt UpdateUserFunction.Arn
+  UpdateUserFunctionApi:
+    Description: "API Gateway endpoint URL for Dev stage for Update User function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/update_user/"
+
+  GetUserAllFunction:
+    Description: "Get All Users Lambda Function ARN"
+    Value: !GetAtt GetUserAllFunction.Arn
+  GetUserAllFunctionApi:
+    Description: "API Gateway endpoint URL for Dev stage for Get All Users function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/getAll/"
+
+  GetUserByIdFunction:
+    Description: "Get User By ID Lambda Function ARN"
+    Value: !GetAtt GetUserByIdFunction.Arn
+  GetUserByIdFunctionApi:
+    Description: "API Gateway endpoint URL for Dev stage for Get User By ID function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/get/{id}/"
+
+  PatchStatusUserFunction:
+    Description: "Patch Status User Lambda Function ARN"
+    Value: !GetAtt PatchStatusUserFunction.Arn
+  PatchStatusUserFunctionApi:
+    Description: "API Gateway endpoint URL for Dev stage for Patch Status User function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/updateStatus/{id}/"
+
+  CreateRentaFunction:
+    Description: "Create Renta Lambda Function ARN"
+    Value: !GetAtt CreateRentaFunction.Arn
+  CreateRentaFunctionApi:
+    Description: "API Gateway endpoint URL for Dev stage for Create Renta function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/create_renta/"
+
+  BajaRentaFunction:
+    Description: "Baja Renta Lambda Function ARN"
+    Value: !GetAtt BajaRentaFunction.Arn
+  BajaRentaFunctionApi:
+    Description: "API Gateway endpoint URL for Dev stage for Baja Renta function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/baja_renta/{id}/"
+
+  CreateBookFunction:
+    Description: "Create Book Lambda Function ARN"
+    Value: !GetAtt CreateBookFunction.Arn
+  CreateBookFunctionApi:
+    Description: "API Gateway endpoint URL for Dev stage for Create Book function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/create_book/"
+
+  UpdateBookFunction:
+    Description: "Update Book Lambda Function ARN"
+    Value: !GetAtt UpdateBookFunction.Arn
+  UpdateBookFunctionApi:
+    Description: "API Gateway endpoint URL for Dev stage for Update Book function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/update_book/{id_book}/"
+
+  PatchBookFunction:
+    Description: "Patch Book Lambda Function ARN"
+    Value: !GetAtt PatchBookFunction.Arn
+  PatchBookFunctionApi:
+    Description: "API Gateway endpoint URL for Dev stage for Patch Book function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/update_book_status/{id_book}/"
+
+  GetBookAllFunction:
+    Description: "Get All Books Lambda Function ARN"
+    Value: !GetAtt GetBookAllFunction.Arn
+  GetBookAllFunctionApi:
+    Description: "API Gateway endpoint URL for Dev stage for Get All Books function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/getAll/"
+
+  GetBookByIdFunction:
+    Description: "Get Book By ID Lambda Function ARN"
+    Value: !GetAtt GetBookByIdFunction.Arn
+  GetBookByIdFunctionApi:
+    Description: "API Gateway endpoint URL for Dev stage for Get Book By ID function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/get/{id}/"

@@ -33,7 +33,8 @@ def lambda_handler(event, context):
     image_key = f"images/{title}_{author}_image.jpg"
     s3_client.put_object(
         Body=image_file,
-        Bucket=os.environ['aws-sam-cli-managed-default-samclisourcebucket-x4zrnk6sfupj'],
+        #Bucket=os.environ['aws-sam-cli-managed-default-samclisourcebucket-x4zrnk6sfupj'],
+        Bucket=os.environ['arn:aws:s3:::bookifyinte'],
         Key=image_key
     )
     image_url = f"https://{os.environ['aws-sam-cli-managed-default-samclisourcebucket-x4zrnk6sfupj']}.s3.amazonaws.com/{image_key}"

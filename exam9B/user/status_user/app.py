@@ -1,26 +1,13 @@
 import json
 import pymysql
-import os
+from utils.database import conn, logger
 
 
-def lambda_handler(event, context):
-    try:
-        connection = pymysql.connect(
-            host=os.environ['DB_HOST'],
-            user=os.environ['DB_USER'],
-            password=os.environ['DB_PASSWORD'],
-            db=os.environ['DB_NAME'],
-            cursorclass=pymysql.cursors.DictCursor
-        )
-    except pymysql.MySQLError as e:
-        return {
-            'statusCode': 500,
-            'body': json.dumps({'error': str(e)})
-        }
+def lambda_handler(event):
     try:
         if event['httpMethod'] == 'GET':
             user_id = event['pathParameters']['id']
-            with connection.cursor() as cursor:
+            with conn.cursor() as cursor:
                 sql = "SELECT * FROM users WHERE id_user = %s"
                 cursor.execute(sql, user_id)
                 result = cursor.fetchone()
@@ -31,7 +18,7 @@ def lambda_handler(event, context):
         elif event['httpMethod'] == 'PATCH':
             user_id = event['pathParameters']['id']
             new_status = json.loads(event['body'])['status']
-            # Aquí implementa la lógica para actualizar el estado del usuario
+
             return {
                 'statusCode': 200,
                 'body': json.dumps(
@@ -53,4 +40,4 @@ def lambda_handler(event, context):
             'body': json.dumps({'error': str(e)})
         }
     finally:
-        connection.close()
+        conn.close()

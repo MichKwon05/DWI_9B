@@ -1,19 +1,12 @@
 import json
 import pymysql
-import os
+from utils.database import conn, logger
 from pymysql import DatabaseError
 
-def lambda_handler(event, context):
+def lambda_handler(event):
     try:
-        connection = pymysql.connect(
-            host=os.environ['DB_HOST'],
-            user=os.environ['DB_USER'],
-            password=os.environ['DB_PASSWORD'],
-            db=os.environ['DB_NAME'],
-            cursorclass=pymysql.cursors.DictCursor
-        )
         user = json.loads(event['body'])
-        with connection.cursor() as cursor:
+        with conn.cursor() as cursor:
             sql = """INSERT INTO users (name, lastname, second_lastname, email, password, phone, id_rol, status)
                          VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"""
             cursor.execute(sql, (
@@ -21,7 +14,7 @@ def lambda_handler(event, context):
                 user['email'], user['password'], user['phone'], user['id_rol'],
                 user.get('status', True))
                            )
-            connection.commit()
+            conn.commit()
 
         return {
             'statusCode': 200,
@@ -36,5 +29,5 @@ def lambda_handler(event, context):
             'body': json.dumps({'error': str(e)})
         }
     finally:
-        if connection:
-            connection.close()
+        if conn:
+            conn.close()

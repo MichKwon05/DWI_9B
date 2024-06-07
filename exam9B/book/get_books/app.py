@@ -1,34 +1,19 @@
 import json
+from utils.database import conn, logger
 import pymysql
-import os
 
-
-def lambda_handler(event, context):
+def lambda_handler():
     try:
-        connection = pymysql.connect(
-            host=os.environ['DB_HOST'],
-            user=os.environ['DB_USER'],
-            password=os.environ['DB_PASSWORD'],
-            db=os.environ['DB_NAME'],
-            cursorclass=pymysql.cursors.DictCursor
-        )
-    except pymysql.MySQLError as e:
-        return {
-            'statusCode': 500,
-            'body': json.dumps({'error': str(e)})
-        }
-    try:
-        with connection.cursor() as cursor:
+        with conn.cursor() as cursor:
             cursor.execute("SELECT * FROM books")
             result = cursor.fetchall()
         return {
             'statusCode': 200,
             'body': json.dumps(result)
         }
-    except Exception as e:
-        return {
-            'statusCode': 500,
-            'body': json.dumps({'error': str(e)})
-        }
+    except pymysql.MySQLError as e:
+        logger.error("ERROR: Could not retrieve events.")
+        logger.error(e)
+        return None  # Indicate error
     finally:
-        connection.close()
+        conn.close()

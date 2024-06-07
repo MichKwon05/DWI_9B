@@ -2,24 +2,16 @@ import json
 import pymysql
 import os
 
-# Variables de entorno para configurar la conexión a la base de datos
-DATABASE_HOST = os.getenv('DATABASE_HOST', 'localhost')
-DATABASE_USER = os.getenv('DATABASE_USER', 'root')
-DATABASE_PASSWORD = os.getenv('DATABASE_PASSWORD', 'root')
-DATABASE_NAME = os.getenv('DATABASE_NAME', 'library')
-
-
 def lambda_handler(event, context):
     # Conexión a la base de datos
     try:
         connection = pymysql.connect(
-            host=DATABASE_HOST,
-            user=DATABASE_USER,
-            password=DATABASE_PASSWORD,
-            db=DATABASE_NAME,
+            host=os.getenv('DATABASE_HOST', 'localhost'),
+            user=os.getenv('DATABASE_USER', 'root'),
+            password=os.getenv('DATABASE_PASSWORD', 'osmich05'),
+            db=os.getenv('DATABASE_NAME', 'library'),
             cursorclass=pymysql.cursors.DictCursor
         )
-
         # Obtener datos de la renta desde el cuerpo del evento
         renta = json.loads(event['body'])
 

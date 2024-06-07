@@ -31,6 +31,7 @@ Resources:
                   - logs:CreateLogGroup
                   - logs:CreateLogStream
                   - logs:PutLogEvents
+                  - secretsmanager:GetSecretValue
                 Resource: arn:aws:logs:*:*:*
 
   UserApi:
@@ -63,7 +64,7 @@ Resources:
   InsertRolAllFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: insert_rol/
+      CodeUri: roles/insert_rol/
       Handler: app.lambda_handler
       Runtime: python3.12
       Role: !GetAtt LambdaExecutionRole.Arn
@@ -80,7 +81,7 @@ Resources:
   InsertUserFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: insert_user/
+      CodeUri: user/insert_user/
       Handler: app.lambda_handler
       Runtime: python3.12
       Role: !GetAtt LambdaExecutionRole.Arn
@@ -97,7 +98,7 @@ Resources:
   UpdateUserFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: update_user/
+      CodeUri: user/update_user/
       Handler: app.lambda_handler
       Runtime: python3.12
       Role: !GetAtt LambdaExecutionRole.Arn
@@ -114,7 +115,7 @@ Resources:
   GetUserAllFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: get_users/
+      CodeUri: user/get_users/
       Handler: app.lambda_handler
       Runtime: python3.12
       Role: !GetAtt LambdaExecutionRole.Arn
@@ -131,7 +132,7 @@ Resources:
   GetUserByIdFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: get_userById/
+      CodeUri: user/get_userById/
       Handler: app.lambda_handler
       Runtime: python3.12
       Role: !GetAtt LambdaExecutionRole.Arn
@@ -148,7 +149,7 @@ Resources:
   PatchStatusUserFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: status_user/
+      CodeUri: user/status_user/
       Handler: app.lambda_handler
       Runtime: python3.12
       Role: !GetAtt LambdaExecutionRole.Arn
@@ -199,7 +200,7 @@ Resources:
   CreateBookFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: book/
+      CodeUri: book/create_book/
       Handler: create_book.lambda_handler
       Runtime: python3.12
       Role: !GetAtt LambdaExecutionRole.Arn
@@ -215,7 +216,7 @@ Resources:
   UpdateBookFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: book/
+      CodeUri: book/update_book/
       Handler: update_book.lambda_handler
       Runtime: python3.12
       Role: !GetAtt LambdaExecutionRole.Arn
@@ -231,7 +232,7 @@ Resources:
   PatchBookFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: book/
+      CodeUri: book/patch_book/
       Handler: patch_book.lambda_handler
       Runtime: python3.12
       Role: !GetAtt LambdaExecutionRole.Arn
@@ -247,7 +248,7 @@ Resources:
   GetBookAllFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: get_books/
+      CodeUri: book/get_books/
       Handler: app.lambda_handler
       Runtime: python3.12
       Role: !GetAtt LambdaExecutionRole.Arn
@@ -264,7 +265,7 @@ Resources:
   GetBookByIdFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: get_bookById/
+      CodeUri: book/get_bookById/
       Handler: app.lambda_handler
       Runtime: python3.12
       Role: !GetAtt LambdaExecutionRole.Arn

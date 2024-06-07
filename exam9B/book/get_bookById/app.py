@@ -1,24 +1,49 @@
 import json
 import pymysql
-import os
+import boto3
+from botocore.exceptions import ClientError
+from typing import Dict
+from utils.database import conn, logger
+import logging
 
-def lambda_handler(event, context):
+def get_secret(secret_name: str, region_name: str) -> Dict[str, str]:
+    """
+    Retrieves the secret value from AWS Secrets Manager.
+
+    Args:
+        secret_name (str): The name or ARN of the secret to retrieve.
+        region_name (str): The AWS region where the secret is stored.
+
+    Returns:
+        dict: The secret value retrieved from AWS Secrets Manager.
+    """
+    # Crear el cliente de Secrets Manager
+    session = boto3.session.Session()
+    client = session.client(service_name='secretsmanager', region_name=region_name)
+
     try:
-        connection = pymysql.connect(
-            host=os.environ['DB_HOST'],
-            user=os.environ['DB_USER'],
-            password=os.environ['DB_PASSWORD'],
-            db=os.environ['DB_NAME'],
-            cursorclass=pymysql.cursors.DictCursor
-        )
-    except pymysql.MySQLError as e:
+        get_secret_value_response = client.get_secret_value(SecretId=secret_name)
+    except ClientError as e:
+        logging.error("Failed to retrieve secret: %s", e)
+        raise e
+
+    return json.loads(get_secret_value_response['SecretString'])
+
+def lambda_handler(event):
+    secret_name = "dev/bookify/mysql"
+    region_name = "us-east-1"
+
+    try:
+        secret = get_secret(secret_name, region_name)
+    except Exception as e:
         return {
             'statusCode': 500,
-            'body': json.dumps({'error': str(e)})
+            'body': json.dumps({'error': f"Failed to retrieve secret: {str(e)}"})
         }
+
     try:
-        book_id = event['pathParameters']['id_book']
-        with connection.cursor() as cursor:
+        book_id = event('id_book')
+        with conn.cursor() as cursor:
             sql = "SELECT * FROM books WHERE id_book = %s"
             cursor.execute(sql, book_id)
             result = cursor.fetchone()
@@ -26,10 +51,10 @@ def lambda_handler(event, context):
             'statusCode': 200,
             'body': json.dumps(result)
         }
-    except Exception as e:
-        return {
-            'statusCode': 500,
-            'body': json.dumps({'error': str(e)})
-        }
+    except pymysql.MySQLError as e:
+        logger.error("ERROR: Could not retrieve events.")
+        logger.error(e)
+        return None  # Indicate error
     finally:
-        connection.close()
+        conn.close()
+

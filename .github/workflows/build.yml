@@ -5,37 +5,14 @@ on:
       - main
   pull_request:
     types: [opened, synchronize, reopened]
-
 jobs:
   sonarcloud:
     name: SonarCloud
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
         with:
-          fetch-depth: 0
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.12'
-
-      - name: Install dependencies for update_data_student
-        run: |
-          cd update_data_student
-          pip install -r requirements.txt
-
-      - name: Install dependencies for get_data_student
-        run: |
-          cd get_data_student
-          pip install -r requirements.txt
-
-      - name: Install dependencies for insert_data_class
-        run: |
-          cd insert_data_class
-          pip install -r requirements.txt
-
+          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
         env:
@@ -57,17 +34,72 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: '3.12'
-      - name: Install dependencies for update_data_student
+      - name: Install dependencies for get_userById
         run: |
-          cd update_data_student
+          cd user/get_userById
           pip install -r requirements.txt
-      - name: Install dependencies for get_data_student
+      - name: Install dependencies for get_users
         run: |
-          cd get_data_student
+          cd user/get_users
           pip install -r requirements.txt
-      - name: Install dependencies for insert_data_class
+      - name: Install dependencies for insert_user
         run: |
-          cd insert_data_class
+          cd user/insert_user
+          pip install -r requirements.txt
+
+      - name: Install dependencies for status_user
+        run: |
+          cd user/status_user
+          pip install -r requirements.txt
+
+      - name: Install dependencies for update_user
+        run: |
+          cd user/update_user
+          pip install -r requirements.txt
+
+      - name: Install dependencies for create_book
+        run: |
+          cd book/create_book
+          pip install -r requirements.txt
+
+      - name: Install dependencies for get_bookById
+        run: |
+          cd book/get_bookById
+          pip install -r requirements.txt
+
+      - name: Install dependencies for get_books
+        run: |
+          cd book/get_books
+          pip install -r requirements.txt
+
+      - name: Install dependencies for patch_book
+        run: |
+          cd book/patch_book
+          pip install -r requirements.txt
+
+      - name: Install dependencies for update_book
+        run: |
+          cd book/update_book
+          pip install -r requirements.txt
+
+      - name: Install dependencies for baja_renta
+        run: |
+          cd renta/baja_renta
+          pip install -r requirements.txt
+
+      - name: Install dependencies for create_renta
+        run: |
+          cd renta/create_renta
+          pip install -r requirements.txt
+
+      - name: Install dependencies for get_roles
+        run: |
+          cd roles/get_roles
+          pip install -r requirements.txt
+
+      - name: Install dependencies for insert_rol
+        run: |
+          cd roles/insert_rol
           pip install -r requirements.txt
 
       - name: Install AWS CLI

@@ -1,16 +1,21 @@
 import json
 import pymysql
 import os
-from utils.database import conn, logger
 
 def lambda_handler(event):
     try:
-
+        connection = pymysql.connect(
+            host='bookify.c7k64au0krfa.us-east-2.rds.amazonaws.com',
+            user='admin',
+            password='quesadilla123',
+            db='library',
+            cursorclass=pymysql.cursors.DictCursor
+        )
         renta_id = event('id')
-        with conn.cursor() as cursor:
+        with connection.cursor() as cursor:
             sql = "UPDATE rents SET status=FALSE WHERE id_rents=%s"
             cursor.execute(sql, (renta_id,))
-        conn.commit()
+        connection.commit()
 
         response = {
             'statusCode': 200,

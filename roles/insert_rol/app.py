@@ -1,8 +1,6 @@
 import json
 import pymysql
-import os
 from pymysql import DatabaseError
-from utils.database import conn, logger
 
 
 def lambda_handler(event):
@@ -11,10 +9,17 @@ def lambda_handler(event):
         name_rol = rol_data['name_rol']
         status = rol_data.get('status', True)
         try:
-            with conn.cursor() as cursor:
+            connection = pymysql.connect(
+                host='bookify.c7k64au0krfa.us-east-2.rds.amazonaws.com',
+                user='admin',
+                password='quesadilla123',
+                db='library',
+                cursorclass=pymysql.cursors.DictCursor
+            )
+            with connection.cursor() as cursor:
                 sql = "INSERT INTO roles (name_rol, status) VALUES (%s, %s)"
                 cursor.execute(sql, (name_rol, status))
-                conn.commit()
+                connection.commit()
         except pymysql.MySQLError as e:
             print(f"Error: {e}")
             return {
@@ -22,7 +27,7 @@ def lambda_handler(event):
                 'body': json.dumps('Error creating role')
             }
         finally:
-            conn.close()
+            connection.close()
 
         return {
             'statusCode': 200,
@@ -37,5 +42,5 @@ def lambda_handler(event):
             'body': json.dumps({'error': str(e)})
         }
     finally:
-        if conn:
-            conn.close()
+        if connection:
+            connection.close()

@@ -19,21 +19,10 @@ def lambda_handler(event, context):
     date_register = book_data['data_register']
     status = book_data['status']
 
-    secret_name = "dev/bookify/mysql"
-    region_name = "us-east-1"
-    secret = get_secret(secret_name, region_name)
-
-    # Database connection parameters
-    host = secret['host']
-    user = secret['username']
-    password = secret['password']
-    database = "library"
-
     image_file = book_data['image_file']
     image_key = f"images/{title}_{author}_image.jpg"
     s3_client.put_object(
         Body=image_file,
-        #Bucket=os.environ['aws-sam-cli-managed-default-samclisourcebucket-x4zrnk6sfupj'],
         Bucket=os.environ['aws-sam-cli-managed-default-samclisourcebucket-x4zrnk6sfupj'],
         Key=image_key
     )
@@ -51,10 +40,10 @@ def lambda_handler(event, context):
 
     try:
         connection = pymysql.connect(
-            host=secret['host'],
-            user=secret['username'],
-            password=secret['password'],
-            db=secret.get('dbname', 'library'),
+            host='bookify.c7k64au0krfa.us-east-2.rds.amazonaws.com',
+            user='admin',
+            password='quesadilla123',
+            db='library',
             cursorclass=pymysql.cursors.DictCursor
         )
 
@@ -71,10 +60,11 @@ def lambda_handler(event, context):
             'body': json.dumps('Libro creado exitosamente')
         }
     except pymysql.MySQLError as e:
-        logging.error("Error al conectar a la base de datos: %s", e)
+        print("ERROR: Could not retrieve events.")
+        print(e)
         return {
             'statusCode': 500,
-            'body': json.dumps('Error al crear el libro')
+            'body': json.dumps({'error': 'Error retrieving events', 'message': str(e)})
         }
     finally:
         connection.close()

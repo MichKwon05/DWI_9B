@@ -1,12 +1,19 @@
 import json
 import pymysql
-from utils.database import conn, logger
 
 def lambda_handler(event):
     try:
+        connection = pymysql.connectionect(
+            host='bookify.c7k64au0krfa.us-east-2.rds.amazonaws.com',
+            user='admin',
+            password='quesadilla123',
+            db='library',
+            cursorclass=pymysql.cursors.DictCursor
+        )
+        
         if event['httpMethod'] == 'GET':
             book_id = event['pathParameters']['id']
-            with conn.cursor() as cursor:
+            with connection.cursor() as cursor:
                 sql = "SELECT * FROM books WHERE id_book = %s"
                 cursor.execute(sql, book_id)
                 result = cursor.fetchone()
@@ -17,10 +24,10 @@ def lambda_handler(event):
         elif event['httpMethod'] == 'PATCH':
             book_id = event['pathParameters']['id']
             new_status = json.loads(event['body'])['status']
-            with conn.cursor() as cursor:
+            with connection.cursor() as cursor:
                 sql = "UPDATE books SET status = %s WHERE id_book = %s"
                 cursor.execute(sql, (new_status, book_id))
-                conn.commit()
+                connection.commit()
             return {
                 'statusCode': 200,
                 'body': json.dumps(
@@ -42,4 +49,4 @@ def lambda_handler(event):
             'body': json.dumps({'error': str(e)})
         }
     finally:
-        conn.close()
+        connection.close()

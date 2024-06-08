@@ -1,19 +1,25 @@
 import json
 import pymysql
-from utils.database import conn, logger
 
 def lambda_handler(event):
     try:
 
+        connection = pymysql.connect(
+            host='bookify.c7k64au0krfa.us-east-2.rds.amazonaws.com',
+            user='admin',
+            password='quesadilla123',
+            db='library',
+            cursorclass=pymysql.cursors.DictCursor
+        )
         user = json.loads(event['body'])
         user_id = event['pathParameters']['id_user']
 
-        with conn.cursor() as cursor:
+        with connection.cursor() as cursor:
             sql = """UPDATE users SET name = %s, last_name = %s, second_lastname = %s, email = %s, password = %s, phone = %s, id_rol = %s, status = %s WHERE id_user = %s"""
             cursor.execute(sql, (
                 user['name'], user['last_name'], user.get('second_lastname', None), user['email'], user['password'],
                 user['phone'], user['id_rol'], user['status'], user_id))
-            conn.commit()
+            connection.commit()
 
         return {
             'statusCode': 200,
@@ -25,5 +31,5 @@ def lambda_handler(event):
             'body': json.dumps({'error': str(e)})
         }
     finally:
-        if conn:
-            conn.close()
+        if connection:
+            connection.close()

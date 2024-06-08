@@ -1,11 +1,17 @@
 import json
 import pymysql
-from utils.database import conn, logger
 
 def lambda_handler(event):
     try:
+        connection = pymysql.connect(
+            host='bookify.c7k64au0krfa.us-east-2.rds.amazonaws.com',
+            user='admin',
+            password='quesadilla123',
+            db='library',
+            cursorclass=pymysql.cursors.DictCursor
+        )
         user_id = event('id_user')
-        with conn.cursor() as cursor:
+        with connection.cursor() as cursor:
             sql = "SELECT * FROM users WHERE id_user = %s"
             cursor.execute(sql, user_id)
             result = cursor.fetchone()
@@ -19,4 +25,4 @@ def lambda_handler(event):
             'body': json.dumps({'error': str(e)})
         }
     finally:
-        conn.close()
+        connection.close()

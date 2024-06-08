@@ -2,14 +2,13 @@ import json
 import pymysql
 import os
 
-def lambda_handler(event, context):
-    # Conexión a la base de datos
+def lambda_handler(event):
     try:
         connection = pymysql.connect(
-            host=os.getenv('DATABASE_HOST', 'localhost'),
-            user=os.getenv('DATABASE_USER', 'root'),
-            password=os.getenv('DATABASE_PASSWORD', 'osmich05'),
-            db=os.getenv('DATABASE_NAME', 'library'),
+            host='bookify.c7k64au0krfa.us-east-2.rds.amazonaws.com',
+            user='admin',
+            password='quesadilla123',
+            db='library',
             cursorclass=pymysql.cursors.DictCursor
         )
         # Obtener datos de la renta desde el cuerpo del evento

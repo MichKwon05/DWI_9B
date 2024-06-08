@@ -1,10 +1,21 @@
 import json
-from utils.database import conn, logger
 import pymysql
+import os
+import boto3
+from botocore.exceptions import ClientError
+from typing import Dict
+import logging
 
 def lambda_handler():
     try:
-        with conn.cursor() as cursor:
+        connection = pymysql.connect(
+            host='bookify.c7k64au0krfa.us-east-2.rds.amazonaws.com',
+            user='admin',
+            password='quesadilla123',
+            db='library',
+            cursorclass=pymysql.cursors.DictCursor
+        )
+        with connection.cursor() as cursor:
             cursor.execute("SELECT * FROM books")
             result = cursor.fetchall()
         return {
@@ -12,8 +23,11 @@ def lambda_handler():
             'body': json.dumps(result)
         }
     except pymysql.MySQLError as e:
-        logger.error("ERROR: Could not retrieve events.")
-        logger.error(e)
-        return None  # Indicate error
+        print("ERROR: Could not retrieve events.")
+        print(e)
+        return {
+            'statusCode': 500,
+            'body': json.dumps({'error': 'Error retrieving events', 'message': str(e)})
+        }
     finally:
-        conn.close()
+        connection.close()

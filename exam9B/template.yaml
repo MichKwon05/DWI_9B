@@ -395,3 +395,5 @@ Outputs:
   GetBookByIdFunctionApi:
     Description: "API Gateway endpoint URL for Dev stage for Get Book By ID function"
     Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/get/{id}/"
+
+

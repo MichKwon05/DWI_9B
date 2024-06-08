@@ -3,14 +3,13 @@ import pymysql
 from pymysql import DatabaseError
 
 
-def lambda_handler(event, __):
+def lambda_handler(event, context):
     try:
         connection = pymysql.connect(
             host='bookify.c7k64au0krfa.us-east-2.rds.amazonaws.com',
             user='admin',
             password='quesadilla123',
             db='library',
-            cursorclass=pymysql.cursors.DictCursor
         )
         user = json.loads(event['body'])
         with connection.cursor() as cursor:

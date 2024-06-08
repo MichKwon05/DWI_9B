@@ -1,16 +1,14 @@
 import json
 import pymysql
-import os
 
 
-def lambda_handler(event, __):
+def lambda_handler(event, context):
     try:
         connection = pymysql.connect(
             host='bookify.c7k64au0krfa.us-east-2.rds.amazonaws.com',
             user='admin',
             password='quesadilla123',
             db='library',
-            cursorclass=pymysql.cursors.DictCursor
         )
         renta_id = event('id')
         with connection.cursor() as cursor:

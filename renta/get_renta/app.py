@@ -10,20 +10,15 @@ def lambda_handler(event, context):
             password='quesadilla123',
             db='library',
         )
-        book_id = event('id_book')
         with connection.cursor() as cursor:
-            sql = "SELECT * FROM books WHERE id_book = %s"
-            cursor.execute(sql, book_id)
-            result = cursor.fetchone()
+            cursor.execute("SELECT * FROM rents")
+            result = cursor.fetchall()
         return {
             'statusCode': 200,
             'body': json.dumps(result)
         }
-    except pymysql.MySQLError as e:
-        print("ERROR: Could not retrieve events.")
-        print(e)
+    except Exception as e:
         return {
             'statusCode': 500,
-            'body': json.dumps({'error': 'Error retrieving events', 'message': str(e)})
+            'body': json.dumps({'error': str(e)})
         }
-

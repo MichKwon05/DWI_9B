@@ -1,23 +1,20 @@
 import json
 import pymysql
-import os
 
 
-def lambda_handler(event, __):
+def lambda_handler(event, context):
     try:
         connection = pymysql.connect(
             host='bookify.c7k64au0krfa.us-east-2.rds.amazonaws.com',
             user='admin',
             password='quesadilla123',
             db='library',
-            cursorclass=pymysql.cursors.DictCursor
         )
-        # Obtener datos de la renta desde el cuerpo del evento
-        renta = json.loads(event['body'])
+        rents = json.loads(event['body'])
 
         with connection.cursor() as cursor:
             sql = "INSERT INTO rents (initial_date, final_date, id_user, id_book) VALUES (%s, %s, %s, %s)"
-            cursor.execute(sql, (renta['initial_date'], renta['final_date'], renta['id_user'], renta['id_book']))
+            cursor.execute(sql, (rents['initial_date'], rents['final_date'], rents['id_user'], rents['id_book']))
         connection.commit()
 
         response = {

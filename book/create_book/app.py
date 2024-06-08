@@ -45,7 +45,6 @@ def lambda_handler(event, context):
             user='admin',
             password='quesadilla123',
             db='library',
-            cursorclass=pymysql.cursors.DictCursor
         )
 
         with connection.cursor() as cursor:

@@ -5,13 +5,12 @@ import boto3
 s3_client = boto3.client('s3')
 
 
-def lambda_handler(event,__):
+def lambda_handler(event, context):
     connection = pymysql.connect(
         host='bookify.c7k64au0krfa.us-east-2.rds.amazonaws.com',
         user='admin',
         password='quesadilla123',
         db='library',
-        cursorclass=pymysql.cursors.DictCursor
     )
     book = json.loads(event['body'])
     book_id = event['pathParameters']['id_book']

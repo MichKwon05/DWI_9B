@@ -3,7 +3,7 @@ import pymysql
 from pymysql import DatabaseError
 
 
-def lambda_handler(event, __):
+def lambda_handler(event,context):
     try:
         rol_data = json.loads(event['body'])
         name_rol = rol_data['name_rol']
@@ -14,7 +14,6 @@ def lambda_handler(event, __):
                 user='admin',
                 password='quesadilla123',
                 db='library',
-                cursorclass=pymysql.cursors.DictCursor
             )
             with connection.cursor() as cursor:
                 sql = "INSERT INTO roles (name_rol, status) VALUES (%s, %s)"
@@ -26,9 +25,6 @@ def lambda_handler(event, __):
                 'statusCode': 500,
                 'body': json.dumps('Error creating role')
             }
-        finally:
-            connection.close()
-
         return {
             'statusCode': 200,
             'body': json.dumps('Rol creado con éxito')
@@ -36,7 +32,6 @@ def lambda_handler(event, __):
     except pymysql.err.MySQLError as e:
         raise DatabaseError(f"Error en la base de datos: {e}")
     except Exception as e:
-
         return {
             'statusCode': 500,
             'body': json.dumps({'error': str(e)})

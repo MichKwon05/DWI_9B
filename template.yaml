@@ -10,7 +10,6 @@ Globals:
     Timeout: 3
 
 Resources:
-
   LambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -32,7 +31,8 @@ Resources:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                   - secretsmanager:GetSecretValue
-                Resource: arn:aws:logs:*:*:*
+                  - execute-api:Invoke
+                Resource: "*"
 
   UserApi:
     Type: AWS::Serverless::Api
@@ -46,10 +46,10 @@ Resources:
       Name: RolApi
       StageName: Dev
 
-  RentaApi:
+  RentApi:
     Type: AWS::Serverless::Api
     Properties:
-      Name: RentaApi
+      Name: RentApi
       StageName: Dev
 
   BookApi:
@@ -90,6 +90,37 @@ Resources:
             Path: /insert_rol
             Method: post
 
+  InsertRolAllFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt InsertRolAllFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+
+  GetRolAllFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: roles/get_roles/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Architectures:
+        - x86_64
+      Events:
+        GetRoles:
+          Type: Api
+          Properties:
+            RestApiId: !Ref RolApi
+            Path: /getAll
+            Method: get
+
+  GetRolAllFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt GetRolAllFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+
   InsertUserFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -106,6 +137,13 @@ Resources:
             RestApiId: !Ref UserApi
             Path: /insert_user
             Method: post
+
+  InsertUserFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt InsertUserFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
 
   UpdateUserFunction:
     Type: AWS::Serverless::Function
@@ -124,6 +162,13 @@ Resources:
             Path: /update_user
             Method: put
 
+  UpdateUserFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt UpdateUserFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+
   GetUserAllFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -141,6 +186,13 @@ Resources:
             Path: /getAll
             Method: get
 
+  GetUserAllFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt GetUserAllFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+
   GetUserByIdFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -155,8 +207,15 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref UserApi
-            Path: /get/{id}
+            Path: /get
             Method: get
+
+  GetUserByIdFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt GetUserByIdFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
 
   PatchStatusUserFunction:
     Type: AWS::Serverless::Function
@@ -172,10 +231,17 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref UserApi
-            Path: /updateStatus/{id}
+            Path: /updateStatus
             Method: patch
 
-  CreateRentaFunction:
+  PatchStatusUserFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt PatchStatusUserFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+
+  CreateRentFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: renta/create_renta/
@@ -185,14 +251,21 @@ Resources:
       Architectures:
         - x86_64
       Events:
-        CreateRenta:
+        CreateRent:
           Type: Api
           Properties:
-            RestApiId: !Ref RentaApi
-            Path: /create_renta
+            RestApiId: !Ref RentApi
+            Path: /create_rent
             Method: post
 
-  BajaRentaFunction:
+  CreateRentFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt CreateRentFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+
+  BajaRentFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: renta/baja_renta/
@@ -202,12 +275,43 @@ Resources:
       Architectures:
         - x86_64
       Events:
-        BajaRenta:
+        BajaRent:
           Type: Api
           Properties:
-            RestApiId: !Ref RentaApi
-            Path: /baja_renta/{id}
+            RestApiId: !Ref RentApi
+            Path: /baja_rent
             Method: patch
+
+  BajaRentFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt BajaRentFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+
+  GetRentFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: renta/get_renta/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Architectures:
+        - x86_64
+      Events:
+        GetRenta:
+          Type: Api
+          Properties:
+            RestApiId: !Ref RentApi
+            Path: /getAll
+            Method: get
+
+  GetRentFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt GetRentFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
 
   CreateBookFunction:
     Type: AWS::Serverless::Function
@@ -226,6 +330,13 @@ Resources:
             Path: /create_book
             Method: post
 
+  CreateBookFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt CreateBookFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+
   UpdateBookFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -240,48 +351,45 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref BookApi
-            Path: /update_book/{id_book}
+            Path: /update_book
             Method: put
 
-  PatchBookFunction:
-    Type: AWS::Serverless::Function
+  UpdateBookFunctionPermission:
+    Type: AWS::Lambda::Permission
     Properties:
-      CodeUri: book/patch_book/
-      Handler: patch_book.lambda_handler
-      Runtime: python3.12
-      Role: !GetAtt LambdaExecutionRole.Arn
-      Architectures:
-        - x86_64
-      Events:
-        PatchBook:
-          Type: Api
-          Properties:
-            RestApiId: !Ref BookApi
-            Path: /update_book_status/{id_book}
-            Method: patch
+      FunctionName: !GetAtt UpdateBookFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
 
   GetBookAllFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: book/get_books/
-      Handler: app.lambda_handler
+      Handler: update_book.lambda_handler
       Runtime: python3.12
       Role: !GetAtt LambdaExecutionRole.Arn
       Architectures:
         - x86_64
       Events:
-        GetBooks:
+        GetBookAll:
           Type: Api
           Properties:
             RestApiId: !Ref BookApi
             Path: /getAll
             Method: get
 
+  GetBookAllFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt GetBookAllFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+
   GetBookByIdFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: book/get_bookById/
-      Handler: app.lambda_handler
+      Handler: update_book.lambda_handler
       Runtime: python3.12
       Role: !GetAtt LambdaExecutionRole.Arn
       Architectures:
@@ -291,96 +399,135 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref BookApi
-            Path: /get/{id}
+            Path: /getOne
             Method: get
 
+  GetBookByIdFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt GetBookByIdFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+
+  PatchBookFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: book/patch_book/
+      Handler: update_book.lambda_handler
+      Runtime: python3.12
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Architectures:
+        - x86_64
+      Events:
+        PatchBookId:
+          Type: Api
+          Properties:
+            RestApiId: !Ref BookApi
+            Path: /patch_status
+            Method: patch
+
+  PatchBookFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt PatchBookFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+
 Outputs:
-  HelloWorldApi:
-    Description: "API Gateway endpoint URL for Dev stage for Hello World function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/hello/"
   HelloWorldFunction:
     Description: "Hello World Lambda Function ARN"
     Value: !GetAtt HelloWorldFunction.Arn
-  HelloWorldFunctionIamRole:
-    Description: "Implicit IAM Role created for Hello World function"
-    Value: !GetAtt HelloWorldFunctionRole.Arn
 
   InsertRolAllFunction:
     Description: "Insert Rol Lambda Function ARN"
     Value: !GetAtt InsertRolAllFunction.Arn
   InsertRolAllFunctionApi:
     Description: "API Gateway endpoint URL for Dev stage for Insert Rol function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/insert_rol/"
+    Value: !Sub "https://${RolApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/insert_rol/"
+
+  GetRolAllFunction:
+    Description: "Get Rol Lambda Function ARN"
+    Value: !GetAtt GetRolAllFunction.Arn
+  GetRolAllFunctionApi:
+    Description: "API Gateway endpoint URL for Dev stage for Get Rol function"
+    Value: !Sub "https://${RolApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/getAll/"
 
   InsertUserFunction:
     Description: "Insert User Lambda Function ARN"
     Value: !GetAtt InsertUserFunction.Arn
   InsertUserFunctionApi:
     Description: "API Gateway endpoint URL for Dev stage for Insert User function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/insert_user/"
+    Value: !Sub "https://${UserApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/insert_user/"
 
   UpdateUserFunction:
     Description: "Update User Lambda Function ARN"
     Value: !GetAtt UpdateUserFunction.Arn
   UpdateUserFunctionApi:
     Description: "API Gateway endpoint URL for Dev stage for Update User function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/update_user/"
+    Value: !Sub "https://${UserApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/update_user/"
 
   GetUserAllFunction:
-    Description: "Get All Users Lambda Function ARN"
+    Description: "Get User Lambda Function ARN"
     Value: !GetAtt GetUserAllFunction.Arn
   GetUserAllFunctionApi:
-    Description: "API Gateway endpoint URL for Dev stage for Get All Users function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/getAll/"
+    Description: "API Gateway endpoint URL for Dev stage for Get User function"
+    Value: !Sub "https://${UserApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/getAll/"
 
   GetUserByIdFunction:
-    Description: "Get User By ID Lambda Function ARN"
+    Description: "Get User By Id Lambda Function ARN"
     Value: !GetAtt GetUserByIdFunction.Arn
   GetUserByIdFunctionApi:
-    Description: "API Gateway endpoint URL for Dev stage for Get User By ID function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/get/{id}/"
+    Description: "API Gateway endpoint URL for Dev stage for Get User By Id function"
+    Value: !Sub "https://${UserApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/get/"
 
   PatchStatusUserFunction:
     Description: "Patch Status User Lambda Function ARN"
     Value: !GetAtt PatchStatusUserFunction.Arn
   PatchStatusUserFunctionApi:
     Description: "API Gateway endpoint URL for Dev stage for Patch Status User function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/updateStatus/{id}/"
+    Value: !Sub "https://${UserApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/updateStatus/"
 
-  CreateRentaFunction:
-    Description: "Create Renta Lambda Function ARN"
-    Value: !GetAtt CreateRentaFunction.Arn
-  CreateRentaFunctionApi:
-    Description: "API Gateway endpoint URL for Dev stage for Create Renta function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/create_renta/"
+  CreateRentFunction:
+    Description: "Create Rent Lambda Function ARN"
+    Value: !GetAtt CreateRentFunction.Arn
+  CreateRentFunctionApi:
+    Description: "API Gateway endpoint URL for Dev stage for Create Rent function"
+    Value: !Sub "https://${RentApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/create_rent/"
 
-  BajaRentaFunction:
-    Description: "Baja Renta Lambda Function ARN"
-    Value: !GetAtt BajaRentaFunction.Arn
-  BajaRentaFunctionApi:
-    Description: "API Gateway endpoint URL for Dev stage for Baja Renta function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/baja_renta/{id}/"
+  BajaRentFunction:
+    Description: "Baja Rent Lambda Function ARN"
+    Value: !GetAtt BajaRentFunction.Arn
+  BajaRentFunctionApi:
+    Description: "API Gateway endpoint URL for Dev stage for Baja Rent function"
+    Value: !Sub "https://${RentApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/baja_rent/"
+
+  GetRentFunction:
+    Description: "Get Rent Lambda Function ARN"
+    Value: !GetAtt GetRentFunction.Arn
+  GetRentFunctionApi:
+    Description: "API Gateway endpoint URL for Dev stage for Get Rent function"
+    Value: !Sub "https://${RentApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/getAll/"
 
   CreateBookFunction:
     Description: "Create Book Lambda Function ARN"
     Value: !GetAtt CreateBookFunction.Arn
   CreateBookFunctionApi:
     Description: "API Gateway endpoint URL for Dev stage for Create Book function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/create_book/"
+    Value: !Sub "https://${BookApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/create_book/"
 
   UpdateBookFunction:
     Description: "Update Book Lambda Function ARN"
     Value: !GetAtt UpdateBookFunction.Arn
   UpdateBookFunctionApi:
     Description: "API Gateway endpoint URL for Dev stage for Update Book function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/update_book/{id_book}/"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/update_book/"
 
   PatchBookFunction:
     Description: "Patch Book Lambda Function ARN"
     Value: !GetAtt PatchBookFunction.Arn
   PatchBookFunctionApi:
     Description: "API Gateway endpoint URL for Dev stage for Patch Book function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/update_book_status/{id_book}/"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/update_book_status/"
 
   GetBookAllFunction:
     Description: "Get All Books Lambda Function ARN"
@@ -394,6 +541,6 @@ Outputs:
     Value: !GetAtt GetBookByIdFunction.Arn
   GetBookByIdFunctionApi:
     Description: "API Gateway endpoint URL for Dev stage for Get Book By ID function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/get/{id}/"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/get/"
 
 

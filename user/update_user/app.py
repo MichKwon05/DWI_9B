@@ -2,7 +2,7 @@ import json
 import pymysql
 
 
-def lambda_handler(event, __):
+def lambda_handler(event, context):
     try:
 
         connection = pymysql.connect(
@@ -10,7 +10,6 @@ def lambda_handler(event, __):
             user='admin',
             password='quesadilla123',
             db='library',
-            cursorclass=pymysql.cursors.DictCursor
         )
         user = json.loads(event['body'])
         user_id = event['pathParameters']['id_user']

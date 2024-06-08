@@ -8,6 +8,7 @@ import logging
 
 s3_client = boto3.client('s3')
 
+
 def lambda_handler(event, context):
     book_data = json.loads(event['body'])
     title = book_data['title']
@@ -66,8 +67,6 @@ def lambda_handler(event, context):
             'statusCode': 500,
             'body': json.dumps({'error': 'Error retrieving events', 'message': str(e)})
         }
-    finally:
-        connection.close()
 
 
 def get_secret(secret_name: str, region_name: str) -> Dict[str, str]:

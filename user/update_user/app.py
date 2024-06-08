@@ -1,7 +1,8 @@
 import json
 import pymysql
 
-def lambda_handler(event):
+
+def lambda_handler(event, __):
     try:
 
         connection = pymysql.connect(
@@ -30,6 +31,3 @@ def lambda_handler(event):
             'statusCode': 500,
             'body': json.dumps({'error': str(e)})
         }
-    finally:
-        if connection:
-            connection.close()

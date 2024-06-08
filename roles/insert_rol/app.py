@@ -3,7 +3,7 @@ import pymysql
 from pymysql import DatabaseError
 
 
-def lambda_handler(event):
+def lambda_handler(event, __):
     try:
         rol_data = json.loads(event['body'])
         name_rol = rol_data['name_rol']
@@ -41,6 +41,3 @@ def lambda_handler(event):
             'statusCode': 500,
             'body': json.dumps({'error': str(e)})
         }
-    finally:
-        if connection:
-            connection.close()

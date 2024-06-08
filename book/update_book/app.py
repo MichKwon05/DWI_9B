@@ -1,13 +1,11 @@
 import json
 import pymysql
-import os
 import boto3
 
 s3_client = boto3.client('s3')
 
-# import requests
-def lambda_handler(event):
 
+def lambda_handler(event,__):
     connection = pymysql.connect(
         host='bookify.c7k64au0krfa.us-east-2.rds.amazonaws.com',
         user='admin',

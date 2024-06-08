@@ -1,7 +1,8 @@
 import json
 import pymysql
 
-def lambda_handler(event):
+
+def lambda_handler(event, __):
     try:
         connection = pymysql.connect(
             host='bookify.c7k64au0krfa.us-east-2.rds.amazonaws.com',
@@ -44,5 +45,3 @@ def lambda_handler(event):
             'statusCode': 500,
             'body': json.dumps({'error': str(e)})
         }
-    finally:
-        connection.close()

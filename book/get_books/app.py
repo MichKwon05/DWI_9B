@@ -6,7 +6,8 @@ from botocore.exceptions import ClientError
 from typing import Dict
 import logging
 
-def lambda_handler():
+
+def lambda_handler(__):
     try:
         connection = pymysql.connect(
             host='bookify.c7k64au0krfa.us-east-2.rds.amazonaws.com',
@@ -29,5 +30,3 @@ def lambda_handler():
             'statusCode': 500,
             'body': json.dumps({'error': 'Error retrieving events', 'message': str(e)})
         }
-    finally:
-        connection.close()

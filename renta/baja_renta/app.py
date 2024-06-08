@@ -2,7 +2,8 @@ import json
 import pymysql
 import os
 
-def lambda_handler(event):
+
+def lambda_handler(event, __):
     try:
         connection = pymysql.connect(
             host='bookify.c7k64au0krfa.us-east-2.rds.amazonaws.com',
@@ -36,10 +37,4 @@ def lambda_handler(event):
             'statusCode': 500,
             'body': json.dumps({'message': f'Error inesperado: {str(e)}'})
         }
-    finally:
-        try:
-            connection.close()
-        except UnboundLocalError:
-            pass  # Si connection nunca fue inicializada, no intentamos cerrarla
-
     return response

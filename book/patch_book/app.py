@@ -1,7 +1,8 @@
 import json
 import pymysql
 
-def lambda_handler(event):
+
+def lambda_handler(event, __):
     try:
         connection = pymysql.connectionect(
             host='bookify.c7k64au0krfa.us-east-2.rds.amazonaws.com',
@@ -10,7 +11,7 @@ def lambda_handler(event):
             db='library',
             cursorclass=pymysql.cursors.DictCursor
         )
-        
+
         if event['httpMethod'] == 'GET':
             book_id = event['pathParameters']['id']
             with connection.cursor() as cursor:
@@ -48,5 +49,3 @@ def lambda_handler(event):
             'statusCode': 500,
             'body': json.dumps({'error': str(e)})
         }
-    finally:
-        connection.close()

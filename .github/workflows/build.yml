@@ -38,9 +38,9 @@ jobs:
         run: |
           cd user/get_userById
           pip install -r requirements.txt
-      - name: Install dependencies for get_user
+      - name: Install dependencies for get_users
         run: |
-          cd user/get_user
+          cd user/get_users
           pip install -r requirements.txt
       - name: Install dependencies for insert_user
         run: |

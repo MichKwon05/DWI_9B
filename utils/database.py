@@ -5,7 +5,7 @@ import os
 
 # rds settings
 user_name = os.environ['default']
-password = os.environ['admin123']
+password = os.environ['quesadilla123']
 proxy_host = os.environ['DB_HOST']
 db_name = os.environ['library']
 

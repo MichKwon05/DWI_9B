@@ -1,92 +1,96 @@
-import json
 import pymysql
 import os
-import boto3
-from botocore.exceptions import ClientError
-from typing import Dict
-import logging
-
-s3_client = boto3.client('s3')
+import json
 
 
 def lambda_handler(event, context):
-    book_data = json.loads(event['body'])
-    title = book_data['title']
-    author = book_data['author']
-    gener = book_data['gener']
-    year = book_data['year']
-    description = book_data['description']
-    synopsis = book_data['synopsis']
-    date_register = book_data['data_register']
-    status = book_data['status']
+    try:
+        body = json.loads(event['body'])
+    except (TypeError, KeyError, json.JSONDecodeError):
+        return {
+            'statusCode': 400,
+            'body': 'Invalid request body.'
+        }
 
-    image_file = book_data['image_file']
-    image_key = f"images/{title}_{author}_image.jpg"
-    s3_client.put_object(
-        Body=image_file,
-        Bucket=os.environ['aws-sam-cli-managed-default-samclisourcebucket-x4zrnk6sfupj'],
-        Key=image_key
-    )
-    image_url = f"https://{os.environ['aws-sam-cli-managed-default-samclisourcebucket-x4zrnk6sfupj']}.s3.amazonaws.com/{image_key}"
+    title = body.get('title')
+    author = body.get('author')
+    genre = body.get('genre')
+    year = body.get('year')
+    description = body.get('description')
+    synopsis = body.get('synopsis')
+    date_register = body.get('date_register')
+    status = body.get('status')
+    image_urls = body.get('image_urls', [])
+    pdf_urls = body.get('pdf_urls', [])
 
-    # Subir PDF a S3
-    pdf_file = book_data['pdf_file']
-    pdf_key = f"pdfs/{title}_{author}_pdf.pdf"
-    s3_client.put_object(
-        Body=pdf_file,
-        Bucket=os.environ['aws-sam-cli-managed-default-samclisourcebucket-x4zrnk6sfupj'],
-        Key=pdf_key
-    )
-    pdf_url = f"https://{os.environ['aws-sam-cli-managed-default-samclisourcebucket-x4zrnk6sfupj']}.s3.amazonaws.com/{pdf_key}"
+
+    if not title or not author or not genre or not year or not description or not synopsis or not date_register or not status:
+        return {
+            'statusCode': 400,
+            'body': 'Missing parameters.'
+        }
 
     try:
-        connection = pymysql.connect(
-            host='bookify.c7k64au0krfa.us-east-2.rds.amazonaws.com',
-            user='admin',
-            password='quesadilla123',
-            db='library',
-        )
+        year = int(year)
+    except ValueError:
+        return {
+            'statusCode': 400,
+            'body': 'Year must be an integer.'
+        }
 
+    try:
+        date_register = str(date_register)  # Assuming it's already in proper format
+    except ValueError:
+        return {
+            'statusCode': 400,
+            'body': 'Date register must be a valid date string.'
+        }
+
+    response = insert_into_books(title, author, genre, year, description,
+                                 synopsis, date_register, status, image_urls, pdf_urls)
+
+    return response
+
+
+def insert_into_books(title, author, genre, year, description, synopsis, date_register, status,
+                      image_urls, pdf_urls):
+    connection = pymysql.connect(
+        host='bookify.c7k64au0krfa.us-east-2.rds.amazonaws.com',
+        user='admin',
+        password='quesadilla123',
+        db='library',
+    )
+
+    try:
         with connection.cursor() as cursor:
-            sql = """INSERT INTO books (title, author, gener, year, description, synopsis, date_register, image_url, pdf_url, status)
-                         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
-            cursor.execute(sql,
-                           (title, author, gener, year,
-                            description, synopsis, date_register, image_url, pdf_url, status))
+            insert_query = """INSERT INTO books 
+                              (title, author, genre, year, description, synopsis, date_register, status)  
+                              VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"""
+            cursor.execute(insert_query, (title, author, genre, year, description, synopsis, date_register, status))
+            book_id = cursor.lastrowid
+
+            for image_url in image_urls:
+                insert_image_query = "INSERT INTO image_book (id_book, url) VALUES (%s, %s)"
+                cursor.execute(insert_image_query, (book_id, image_url))
+
+            for pdf_url in pdf_urls:
+                insert_pdf_query = "INSERT INTO pdf_book (id_book, url) VALUES (%s, %s)"
+                cursor.execute(insert_pdf_query, (book_id, pdf_url))
+
             connection.commit()
 
-        return {
-            'statusCode': 200,
-            'body': json.dumps('Libro creado exitosamente')
-        }
-    except pymysql.MySQLError as e:
-        print("ERROR: Could not retrieve events.")
-        print(e)
+            connection.commit()
+
+    except Exception as e:
         return {
             'statusCode': 500,
-            'body': json.dumps({'error': 'Error retrieving events', 'message': str(e)})
+            'body': f'An error occurred: {str(e)}'
         }
 
+    finally:
+        connection.close()
 
-def get_secret(secret_name: str, region_name: str) -> Dict[str, str]:
-    """
-    Retrieves the secret value from AWS Secrets Manager.
-
-    Args:
-        secret_name (str): The name or ARN of the secret to retrieve.
-        region_name (str): The AWS region where the secret is stored.
-
-    Returns:
-        dict: The secret value retrieved from AWS Secrets Manager.
-    """
-    # Create a Secrets Manager client
-    session = boto3.session.Session()
-    client = session.client(service_name='secretsmanager', region_name=region_name)
-
-    try:
-        get_secret_value_response = client.get_secret_value(SecretId=secret_name)
-    except ClientError as e:
-        logging.error("Failed to retrieve secret: %s", e)
-        raise e
-
-    return json.loads(get_secret_value_response['SecretString'])
+    return {
+        'statusCode': 200,
+        'body': 'Record inserted successfully.'
+    }

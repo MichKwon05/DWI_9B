@@ -317,7 +317,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: book/create_book/
-      Handler: create_book.lambda_handler
+      Handler: app.lambda_handler
       Runtime: python3.12
       Role: !GetAtt LambdaExecutionRole.Arn
       Architectures:
@@ -341,7 +341,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: book/update_book/
-      Handler: update_book.lambda_handler
+      Handler: app.lambda_handler
       Runtime: python3.12
       Role: !GetAtt LambdaExecutionRole.Arn
       Architectures:
@@ -365,7 +365,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: book/get_books/
-      Handler: update_book.lambda_handler
+      Handler: app.lambda_handler
       Runtime: python3.12
       Role: !GetAtt LambdaExecutionRole.Arn
       Architectures:
@@ -389,7 +389,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: book/get_bookById/
-      Handler: update_book.lambda_handler
+      Handler: app.lambda_handler
       Runtime: python3.12
       Role: !GetAtt LambdaExecutionRole.Arn
       Architectures:
@@ -413,7 +413,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: book/patch_book/
-      Handler: update_book.lambda_handler
+      Handler: app.lambda_handler
       Runtime: python3.12
       Role: !GetAtt LambdaExecutionRole.Arn
       Architectures:
@@ -520,27 +520,27 @@ Outputs:
     Value: !GetAtt UpdateBookFunction.Arn
   UpdateBookFunctionApi:
     Description: "API Gateway endpoint URL for Dev stage for Update Book function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/update_book/"
+    Value: !Sub "https://${BookApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/update_book/"
 
   PatchBookFunction:
     Description: "Patch Book Lambda Function ARN"
     Value: !GetAtt PatchBookFunction.Arn
   PatchBookFunctionApi:
     Description: "API Gateway endpoint URL for Dev stage for Patch Book function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/update_book_status/"
+    Value: !Sub "https://${BookApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/update_book_status/"
 
   GetBookAllFunction:
     Description: "Get All Books Lambda Function ARN"
     Value: !GetAtt GetBookAllFunction.Arn
   GetBookAllFunctionApi:
     Description: "API Gateway endpoint URL for Dev stage for Get All Books function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/getAll/"
+    Value: !Sub "https://${BookApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/getAll/"
 
   GetBookByIdFunction:
     Description: "Get Book By ID Lambda Function ARN"
     Value: !GetAtt GetBookByIdFunction.Arn
   GetBookByIdFunctionApi:
     Description: "API Gateway endpoint URL for Dev stage for Get Book By ID function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/get/"
+    Value: !Sub "https://${BookApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/get/"
 
 

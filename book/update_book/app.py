@@ -18,7 +18,7 @@ def lambda_handler(event, context):
         sql = """UPDATE books SET title = %s, author = %s, gener = %s, year = %s, description = %s, synopsis = %s, image_url = %s, pdf_url = %s,  status = %s WHERE id_book = %s"""
         cursor.execute(sql, (
             book['title'], book['author'], book['gener'], book['year'],
-            book['description'], book['synopsis'], book['image_url'], book['pdf_url'], book['status'], book_id))
+            book['description'], book['synopsis'], book['status'], book_id))
         connection.commit()
     return {
         'statusCode': 200,

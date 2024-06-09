@@ -1,8 +1,5 @@
 import json
 import pymysql
-import boto3
-
-s3_client = boto3.client('s3')
 
 
 def lambda_handler(event, context):
@@ -12,15 +9,44 @@ def lambda_handler(event, context):
         password='quesadilla123',
         db='library',
     )
-    book = json.loads(event['body'])
-    book_id = event['pathParameters']['id_book']
-    with connection.cursor() as cursor:
-        sql = """UPDATE books SET title = %s, author = %s, gener = %s, year = %s, description = %s, synopsis = %s, image_url = %s, pdf_url = %s,  status = %s WHERE id_book = %s"""
-        cursor.execute(sql, (
-            book['title'], book['author'], book['gener'], book['year'],
-            book['description'], book['synopsis'], book['status'], book_id))
-        connection.commit()
-    return {
-        'statusCode': 200,
-        'body': json.dumps('Usuario updated successfully')
-    }
+    try:
+        if not event.get('body'):
+            return {
+                'statusCode': 400,
+                'body': json.dumps({'error': 'Missing body in the event'})
+            }
+
+        book = json.loads(event['body'])
+
+        if 'id_book' not in book:
+            return {
+                'statusCode': 400,
+                'body': json.dumps({'error': 'Missing id_book in the body'})
+            }
+
+        book_id = book['id_book']
+
+        with connection.cursor() as cursor:
+            sql = """UPDATE books SET title = %s, author = %s, gener = %s, year = %s, description = %s, synopsis = %s, status = %s WHERE id_book = %s"""
+            cursor.execute(sql, (
+                book['title'], book['author'], book['gener'], book['year'],
+                book['description'], book['synopsis'], book.get('status', True), book_id))
+            connection.commit()
+
+        return {
+            'statusCode': 200,
+            'body': json.dumps('Book updated successfully')
+        }
+    except pymysql.err.MySQLError as e:
+        return {
+            'statusCode': 500,
+            'body': json.dumps({'error': f"Database error: {e}"})
+        }
+    except Exception as e:
+        return {
+            'statusCode': 500,
+            'body': json.dumps({'error': str(e)})
+        }
+    finally:
+        if connection:
+            connection.close()

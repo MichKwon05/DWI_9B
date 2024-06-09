@@ -15,7 +15,6 @@ def lambda_handler(event, context):
 
         book = json.loads(event['body'])
 
-        # Ejecutar la inserción del libro en la base de datos
         with connection.cursor() as cursor:
             sql = """INSERT INTO books (title, author, gener, year, description, synopsis, status)
                      VALUES (%s, %s, %s, %s, %s, %s, %s)"""
@@ -25,7 +24,6 @@ def lambda_handler(event, context):
                            )
             connection.commit()
 
-        # Retornar una respuesta exitosa si todo está bien
         return {
             'statusCode': 200,
             'body': 'Libro creado con éxito'

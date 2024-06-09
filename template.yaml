@@ -46,12 +46,6 @@ Resources:
       Name: RolApi
       StageName: Dev
 
-  RentApi:
-    Type: AWS::Serverless::Api
-    Properties:
-      Name: RentApi
-      StageName: Dev
-
   BookApi:
     Type: AWS::Serverless::Api
     Properties:
@@ -241,78 +235,6 @@ Resources:
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
 
-  CreateRentFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: renta/create_renta/
-      Handler: app.lambda_handler
-      Runtime: python3.12
-      Role: !GetAtt LambdaExecutionRole.Arn
-      Architectures:
-        - x86_64
-      Events:
-        CreateRent:
-          Type: Api
-          Properties:
-            RestApiId: !Ref RentApi
-            Path: /create_rent
-            Method: post
-
-  CreateRentFunctionPermission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      FunctionName: !GetAtt CreateRentFunction.Arn
-      Action: lambda:InvokeFunction
-      Principal: apigateway.amazonaws.com
-
-  BajaRentFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: renta/baja_renta/
-      Handler: app.lambda_handler
-      Runtime: python3.12
-      Role: !GetAtt LambdaExecutionRole.Arn
-      Architectures:
-        - x86_64
-      Events:
-        BajaRent:
-          Type: Api
-          Properties:
-            RestApiId: !Ref RentApi
-            Path: /baja_rent
-            Method: patch
-
-  BajaRentFunctionPermission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      FunctionName: !GetAtt BajaRentFunction.Arn
-      Action: lambda:InvokeFunction
-      Principal: apigateway.amazonaws.com
-
-  GetRentFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: renta/get_renta/
-      Handler: app.lambda_handler
-      Runtime: python3.12
-      Role: !GetAtt LambdaExecutionRole.Arn
-      Architectures:
-        - x86_64
-      Events:
-        GetRenta:
-          Type: Api
-          Properties:
-            RestApiId: !Ref RentApi
-            Path: /getAll
-            Method: get
-
-  GetRentFunctionPermission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      FunctionName: !GetAtt GetRentFunction.Arn
-      Action: lambda:InvokeFunction
-      Principal: apigateway.amazonaws.com
-
   CreateBookFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -486,27 +408,6 @@ Outputs:
   PatchStatusUserFunctionApi:
     Description: "API Gateway endpoint URL for Dev stage for Patch Status User function"
     Value: !Sub "https://${UserApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/updateStatus/"
-
-  CreateRentFunction:
-    Description: "Create Rent Lambda Function ARN"
-    Value: !GetAtt CreateRentFunction.Arn
-  CreateRentFunctionApi:
-    Description: "API Gateway endpoint URL for Dev stage for Create Rent function"
-    Value: !Sub "https://${RentApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/create_rent/"
-
-  BajaRentFunction:
-    Description: "Baja Rent Lambda Function ARN"
-    Value: !GetAtt BajaRentFunction.Arn
-  BajaRentFunctionApi:
-    Description: "API Gateway endpoint URL for Dev stage for Baja Rent function"
-    Value: !Sub "https://${RentApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/baja_rent/"
-
-  GetRentFunction:
-    Description: "Get Rent Lambda Function ARN"
-    Value: !GetAtt GetRentFunction.Arn
-  GetRentFunctionApi:
-    Description: "API Gateway endpoint URL for Dev stage for Get Rent function"
-    Value: !Sub "https://${RentApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/getAll/"
 
   CreateBookFunction:
     Description: "Create Book Lambda Function ARN"

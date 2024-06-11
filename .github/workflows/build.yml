@@ -81,17 +81,6 @@ jobs:
         run: |
           cd book/update_book
           pip install -r requirements.txt
-
-      - name: Install dependencies for baja_renta
-        run: |
-          cd renta/baja_renta
-          pip install -r requirements.txt
-
-      - name: Install dependencies for create_renta
-        run: |
-          cd renta/create_renta
-          pip install -r requirements.txt
-
       - name: Install dependencies for get_roles
         run: |
           cd roles/get_roles

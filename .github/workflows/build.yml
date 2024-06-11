@@ -100,9 +100,11 @@ jobs:
         run: |
           pip install aws-sam-cli
       - name: Build SAM application
-        run: sam build
+        run: |
+          sam build
       - name: Deploy SAM application
-        run: sam deploy --no-confirm-changeset --no-fail-on-empty-changeset --stack-name bookify-app --capabilities CAPABILITY_IAM
+        run: |
+          sam deploy --no-confirm-changeset --no-fail-on-empty-changeset --stack-name bookify-app --capabilities CAPABILITY_IAM
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

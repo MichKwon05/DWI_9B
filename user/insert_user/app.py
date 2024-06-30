@@ -3,6 +3,7 @@ import pymysql
 from pymysql import DatabaseError
 
 
+
 def lambda_handler(event, context):
 
     connection = pymysql.connect(

@@ -33,7 +33,18 @@ Resources:
                   - secretsmanager:GetSecretValue
                   - execute-api:Invoke
                 Resource: "*"
-
+        - PolicyName: LambdaCognitoPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cognito-idp:AdminInitiateAuth
+                  - cognito-idp:AdminRespondToAuthChallenge
+                  - cognito-idp:ForgotPassword
+                  - cognito-idp:ConfirmForgotPassword
+                  - cognito-idp:ChangePassword
+                Resource: '*'
 
   CognitoUserPool:
     Type: AWS::Cognito::UserPool
@@ -46,10 +57,22 @@ Resources:
       Policies:
         PasswordPolicy:
           MinimumLength: 8
-          RequireUppercase: True
-          RequireLowercase: True
-          RequireNumbers: True
-          RequireSymbols: True
+          RequireUppercase: true
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: true
+
+  CognitoUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: Bookify_Pool
+      UserPoolId: !Ref CognitoUserPool
+      GenerateSecret: false
+
+  LoginApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Dev
 
   UserApi:
     Type: AWS::Serverless::Api
@@ -372,7 +395,62 @@ Resources:
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
 
+  ForgotPasswordFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: cognito/forgot_password/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Environment:
+        Variables:
+          USER_POOL_ID: !Ref CognitoUserPool
+          USER_POOL_CLIENT_ID: !Ref CognitoUserPoolClient
+      Events:
+        ForgotPasswordApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LoginApi
+            Path: /forgot_password
+            Method: post
 
+  LoginFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: cognito/login/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Environment:
+        Variables:
+          USER_POOL_ID: !Ref CognitoUserPool
+          USER_POOL_CLIENT_ID: !Ref CognitoUserPoolClient
+      Events:
+        LoginApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LoginApi
+            Path: /login
+            Method: post
+
+  ChangePasswordFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: cognito/change_password/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Environment:
+        Variables:
+          USER_POOL_ID: !Ref CognitoUserPool
+          USER_POOL_CLIENT_ID: !Ref CognitoUserPoolClient
+      Events:
+        ChangePasswordApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LoginApi
+            Path: /change_password
+            Method: post
 
 Outputs:
   HelloWorldFunction:
@@ -463,4 +541,31 @@ Outputs:
     Description: "API Gateway endpoint URL for Dev stage for Get Book By ID function"
     Value: !Sub "https://${BookApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/get/"
 
+  LoginFunction:
+    Description: "Login Lambda Function ARN"
+    Value: !GetAtt LoginFunction.Arn
+
+  LoginFunctionApi:
+    Description: "API Gateway endpoint URL for Dev stage for Login function"
+    Value: !Sub "https://${LoginApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/Dev/login/"
+
+  ForgotPasswordFunction:
+    Description: "API Gateway endpoint URL for Forgot Password function"
+    Value: !Sub "https://${LoginApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/Dev/forgot_password"
+
+  ChangePasswordFunction:
+    Description: "API Gateway endpoint URL for Change Password function"
+    Value: !Sub "https://${LoginApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/Dev/change_password"
+
+  CognitoUserPoolId:
+    Description: "Cognito User Pool ID"
+    Value: !Ref CognitoUserPool
+    Export:
+      Name: "CognitoUserPoolId"
+
+  CognitoUserPoolClientId:
+    Description: "Cognito User Pool Client ID"
+    Value: !Ref CognitoUserPoolClient
+    Export:
+      Name: "CognitoUserPoolClientId"
 

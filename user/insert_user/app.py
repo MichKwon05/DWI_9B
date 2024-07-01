@@ -1,43 +1,123 @@
 import json
-import pymysql
-from pymysql import DatabaseError
-
+import boto3
+from db_conection import get_secret, calculate_secret_hash, get_connection
 
 
 def lambda_handler(event, context):
+    try:
+        body = json.loads(event['body'])
+    except (TypeError, KeyError, json.JSONDecodeError):
+        return {
+            'statusCode': 400,
+            'body': 'Invalid request body.'
+        }
 
-    connection = pymysql.connect(
-        host='bookify.c7k64au0krfa.us-east-2.rds.amazonaws.com',
-        user='admin',
-        password='quesadilla123',
-        db='library',
-    )
+    password = body.get('password')
+    email = body.get('email')
+    name = body.get('name')
+    lastname = body.get('lastname')
+    second_lastname = body.get('second_lastname')
+    phone = body.get('phone')
+    id_rol = body.get('id_rol')
+
+    if not password or not email or not name or not lastname or not phone or not id_rol:
+        return {
+            'statusCode': 400,
+            'body': 'Missing parameters.'
+        }
 
     try:
-
-        user = json.loads(event['body'])
-        with connection.cursor() as cursor:
-            sql = """INSERT INTO users (name, lastname, second_lastname, email, password, phone, id_rol, status)
-                         VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"""
-            cursor.execute(sql, (
-                user['name'], user['lastname'], user.get('second_lastname', None),
-                user['email'], user['password'], user['phone'], user['id_rol'],
-                user.get('status', True))
-                           )
-            connection.commit()
-
+        secret = get_secret()
+        response = register_user(email, password, name, lastname, second_lastname, phone, id_rol, secret)
+        return response
+    except Exception as e:
         return {
-            'statusCode': 200,
-            'body': json.dumps('User creado con éxito')
+            'statusCode': 500,
+            'body': json.dumps(f'An error occurred: {str(e)}')
         }
-    except pymysql.err.MySQLError as e:
-        raise DatabaseError(f"Error en la base de datos: {e}")
+
+
+def register_user(email, password, name, lastname, second_lastname, phone, id_rol, secret):
+    try:
+        client = boto3.client('cognito-idp')
+        secret_hash = calculate_secret_hash(secret['COGNITO_CLIENT_ID'], secret['SECRET_KEY'], email)
+        response = client.sign_up(
+            ClientId=secret['COGNITO_CLIENT_ID'],
+            SecretHash=secret_hash,
+            Username=email,
+            Password=password,
+            UserAttributes=[
+                {
+                    'Name': 'email',
+                    'Value': email
+                },
+                {
+                    'Name': 'name',
+                    'Value': name
+                }
+            ]
+        )
+        client.admin_add_user_to_group(
+            UserPoolId=secret['COGNITO_USER_POOL_ID'],
+            Username=email,
+            GroupName=secret['COGNITO_GROUP_NAME']
+        )
 
     except Exception as e:
         return {
             'statusCode': 500,
-            'body': json.dumps({'error': str(e)})
+            'body': json.dumps(f'An error occurred: {str(e)}')
         }
 
+    insert_into_user(email, response['UserSub'], name, lastname, second_lastname, phone, id_rol, password)
+
+    return {
+        'statusCode': 200,
+        'headers': {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Headers': '*',
+            'Access-Control-Allow-Methods': 'OPTIONS,POST,GET,PUT,DELETE'
+        },
+        'body': json.dumps({'message': 'Send verification code', 'user': response['UserSub']})
+    }
+
+
+def insert_into_user(email, id_cognito, name, lastname, second_lastname, phone, id_rol, password):
+    connection = get_connection()
+
+    try:
+        with connection.cursor() as cursor:
+            insert_query = """
+            INSERT INTO users (email, id_cognito, name, lastname, second_lastname, phone, id_rol, password)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            """
+            cursor.execute(insert_query, (email, id_cognito, name, lastname, second_lastname, phone, id_rol, password))
+            connection.commit()
+
+    except Exception as e:
+        return {
+            'statusCode': 500,
+            'body': f'An error occurred: {str(e)}'
+        }
+
+    finally:
+        connection.close()
+
+    return {
+        'statusCode': 200,
+        'body': 'Record inserted successfully.'
+    }
+
+
+def verify_role(id_rol):
+    connection = get_connection()
+
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT id_rol FROM roles WHERE id_rol = %s", (id_rol,))
+            result = cursor.fetchone()
+            return result is not None
+    except Exception as e:
+        return False
     finally:
         connection.close()

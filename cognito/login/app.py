@@ -1,9 +1,9 @@
 import json
 import boto3
-from db_conection import get_secret, calculate_secret_hash
+from .db_conection import get_secret, calculate_secret_hash
 
 
-def lambda_handler(event, context):
+def lambda_handler(event, __):
     try:
         body = json.loads(event['body'])
     except (TypeError, KeyError, json.JSONDecodeError):
@@ -29,15 +29,14 @@ def lambda_handler(event, context):
 def login_auth(email, password, secret):
     try:
         client = boto3.client('cognito-idp')
-        secret_hash = calculate_secret_hash(secret['COGNITO_CLIENT_ID'], secret['SECRET_KEY'], email)
+        #secret_hash = calculate_secret_hash(secret['COGNITO_CLIENT_ID'], secret['SECRET_KEY'], email)
 
         response = client.initiate_auth(
-            ClientId=secret['COGNITO_CLIENT_ID'],
+            ClientId="3st6oil7mhbss5rvmf2p6q3qtj",
             AuthFlow='USER_PASSWORD_AUTH',
             AuthParameters={
                 'USERNAME': email,
                 'PASSWORD': password,
-                'SECRET_HASH': secret_hash
             },
         )
         user_groups = client.admin_list_groups_for_user(

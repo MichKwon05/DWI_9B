@@ -8,6 +8,11 @@ Description: >
 Globals:
   Function:
     Timeout: 3
+  Api:
+    Cors:
+      AllowOrigin: "'*'"
+      AllowHeaders: "'Content-Type'"
+      AllowMethods: "'GET,PUT,POST,DELETE,OPTIONS'"
 
 Resources:
   LambdaExecutionRole:
@@ -30,9 +35,43 @@ Resources:
                   - logs:CreateLogGroup
                   - logs:CreateLogStream
                   - logs:PutLogEvents
+                Resource: arn:aws:logs:*:*:*
+        - PolicyName: SSMGetParameter
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
                   - secretsmanager:GetSecretValue
-                  - execute-api:Invoke
-                Resource: "*"
+                Resource: 'arn:aws:secretsmanager:us-east-1:*'
+        - PolicyName: CognitoAdminInitiateAuth
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cognito-idp:AdminInitiateAuth
+                  - cognito-idp:AdminRespondToAuthChallenge
+                  - cognito-idp:AdminSetUserPassword
+                  - cognito-idp:AdminCreateUser
+                  - cognito-idp:AdminDeleteUser
+                  - cognito-idp:AdminUpdateUserAttributes
+                  - cognito-idp:AdminListGroupsForUser
+                  - cognito-idp:AdminAddUserToGroup
+                  - cognito-idp:AdminRemoveUserFromGroup
+                  - cognito-idp:AdminGetUser
+                  - cognito-idp:AdminGetUserAttributeVerificationCode
+                  - cognito-idp:AdminConfirmSignUp
+                  - cognito-idp:AdminForgetDevice
+                  - cognito-idp:AdminConfirmDevice
+                  - cognito-idp:AdminUpdateDeviceStatus
+                  - cognito-idp:AdminEnableUser
+                  - cognito-idp:AdminDisableUser
+                  - cognito-idp:AdminResetUserPassword
+                  - cognito-idp:AdminSetUserSettings
+                  - cognito-idp:AdminUpdateAuthEventFeedback
+                  - cognito-idp:AdminUserGlobalSignOut
+                Resource: 'arn:aws:cognito-idp:us-east-1:*:*'
 
 
   CognitoUserPool:
@@ -51,6 +90,20 @@ Resources:
           RequireNumbers: True
           RequireSymbols: True
 
+  AdminUserGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: Admins
+      UserPoolId: !Ref CognitoUserPool
+      Precedence: 1
+
+  ClientUserGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: Clients
+      UserPoolId: !Ref CognitoUserPool
+      Precedence: 2
+
   UserApi:
     Type: AWS::Serverless::Api
     Properties:
@@ -68,6 +121,16 @@ Resources:
     Properties:
       Name: BookApi
       StageName: Dev
+
+  CognitoApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: CognitoApi
+      StageName: Dev
+      Cors:
+        AllowOrigin: "'*'"
+        AllowHeaders: "'*'"
+        AllowMethods: "'OPTIONS,POST,GET,PUT,DELETE'"
 
   HelloWorldFunction:
     Type: AWS::Serverless::Function
@@ -107,6 +170,8 @@ Resources:
       FunctionName: !GetAtt InsertRolAllFunction.Arn
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
+
+
 
   GetRolAllFunction:
     Type: AWS::Serverless::Function
@@ -372,8 +437,59 @@ Resources:
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
 
+  LoginFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: cognito/login/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Architectures:
+        - x86_64
+      Timeout: 60
+      Events:
+        GetDataStudent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref CognitoApi
+            Path: /login
+            Method: post
 
+  ForgotPasswordFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: cognito/forgot_password/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Architectures:
+        - x86_64
+      Timeout: 60
+      Events:
+        GetDataStudent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref CognitoApi
+            Path: /forgot_password
+            Method: post
 
+  ChangePasswordFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: cognito/change_password/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Architectures:
+        - x86_64
+      Timeout: 60
+      Events:
+        GetDataStudent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref CognitoApi
+            Path: /change_password
+            Method: post
 Outputs:
   HelloWorldFunction:
     Description: "Hello World Lambda Function ARN"
@@ -464,3 +580,25 @@ Outputs:
     Value: !Sub "https://${BookApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/get/"
 
 
+  ForgotPasswordApi:
+    Description: "API Gateway endpoint URL with path forgot_password for Prod stage to Cognito Model"
+    Value: !Sub "https://${CognitoApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/forgot_password"
+  ForgotPasswordFunction:
+    Description: "Forgot password Lambda Function ARN"
+    Value: !GetAtt ForgotPasswordFunction.Arn
+  ChangePasswordApi:
+    Description: "API Gateway endpoint URL with path change_password for Prod stage to Cognito Model"
+    Value: !Sub "https://${CognitoApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/change_password"
+  ChangePasswordFunction:
+    Description: "Change password Lambda Function ARN"
+    Value: !GetAtt ChangePasswordFunction.Arn
+  LoginFunction:
+    Description: "Login Lambda Function ARN"
+    Value: !GetAtt LoginFunction.Arn
+  LoginApi:
+    Description: "API Gateway endpoint URL with path login for Prod stage to Cognito Model"
+    Value: !Sub "https://${CognitoApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/login"
+
+  LambdaExecutionRoleArn:
+    Description: "Lambda Execution Role ARN"
+    Value: !GetAtt LambdaExecutionRole.Arn

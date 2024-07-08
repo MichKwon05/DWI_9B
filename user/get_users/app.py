@@ -1,24 +1,51 @@
 import json
-import pymysql
+from db_connection import get_connection, handle_response
+headers_cors = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': '*',
+    'Access-Control-Allow-Methods': 'OPTIONS,POST,GET,PUT,DELETE'
+}
 
 
 def lambda_handler(event, context):
+    connection = get_connection()
+
+    users = []
+
     try:
-        connection = pymysql.connect(
-            host='bookify.c7k64au0krfa.us-east-2.rds.amazonaws.com',
-            user='admin',
-            password='quesadilla123',
-            db='library',
-        )
         with connection.cursor() as cursor:
-            cursor.execute("SELECT * FROM users")
+            cursor.execute(
+                "SELECT id_user, name, lastname, second_lastname, id_cognito, email, password, phone, id_rol, status FROM users")
             result = cursor.fetchall()
-        return {
-            'statusCode': 200,
-            'body': json.dumps(result)
-        }
+
+            for row in result:
+                user = {
+                    'id_user': row[0],
+                    'name': row[1],
+                    'lastname': row[2],
+                    'second_lastname': row[3],
+                    'id_cognito': row[4],
+                    'email': row[5],
+                    'password': row[6],
+                    'phone': row[7],
+                    'id_rol': row[8],
+                    'status': row[9]
+                }
+                users.append(user)
+
     except Exception as e:
-        return {
-            'statusCode': 500,
-            'body': json.dumps({'error': str(e)})
-        }
+        return handle_response(str(e), 'Error al obtener usuarios.', 500)
+
+    finally:
+        connection.close()
+
+    return {
+        "statusCode": 200,
+        'headers': headers_cors,
+        "body": json.dumps({
+            'statusCode': 200,
+            'message': 'get users',
+            'data': users
+        }),
+    }
+

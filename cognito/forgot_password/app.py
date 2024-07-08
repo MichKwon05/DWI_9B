@@ -1,6 +1,6 @@
 import json
 import boto3
-from db_conection import get_secret
+from .db_conection import get_secret
 
 
 def lambda_handler(event, context):

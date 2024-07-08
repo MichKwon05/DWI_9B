@@ -1,24 +1,43 @@
 import json
-import pymysql
+from db_connection import get_connection, handle_response
+headers_cors = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': '*',
+    'Access-Control-Allow-Methods': 'OPTIONS,POST,GET,PUT,DELETE'
+}
 
 
 def lambda_handler(event, context):
+    connection = get_connection()
+
+    roles = []
+
     try:
-        connection = pymysql.connect(
-            host='bookify.c7k64au0krfa.us-east-2.rds.amazonaws.com',
-            user='admin',
-            password='quesadilla123',
-            db='library',
-        )
         with connection.cursor() as cursor:
-            cursor.execute("SELECT * FROM roles")
+            cursor.execute(
+                "SELECT id_rol, name_rol, status FROM roles")
             result = cursor.fetchall()
-        return {
-            'statusCode': 200,
-            'body': json.dumps(result)
-        }
+
+            for row in result:
+                role = {
+                    'id_rol': row[0],
+                    'name_rol': row[1],
+                    'status': row[2]
+                }
+                roles.append(role)
+
     except Exception as e:
-        return {
-            'statusCode': 500,
-            'body': json.dumps({'error': str(e)})
-        }
+        return handle_response(str(e), 'Error al obtener roles.', 500)
+
+    finally:
+        connection.close()
+
+    return {
+        "statusCode": 200,
+        'headers': headers_cors,
+        "body": json.dumps({
+            'statusCode': 200,
+            'message': 'get roles',
+            'data': roles
+        }),
+    }

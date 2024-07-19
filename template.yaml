@@ -8,11 +8,6 @@ Description: >
 Globals:
   Function:
     Timeout: 3
-  Api:
-    Cors:
-      AllowOrigin: "'*'"
-      AllowHeaders: "'Content-Type'"
-      AllowMethods: "'GET,PUT,POST,DELETE,OPTIONS'"
 
 Resources:
   LambdaExecutionRole:
@@ -43,7 +38,7 @@ Resources:
               - Effect: Allow
                 Action:
                   - secretsmanager:GetSecretValue
-                Resource: 'arn:aws:secretsmanager:us-east-1:*'
+                Resource: 'arn:aws:secretsmanager:us-east-2:*'
         - PolicyName: CognitoAdminInitiateAuth
           PolicyDocument:
             Version: '2012-10-17'
@@ -103,34 +98,73 @@ Resources:
       GroupName: Clients
       UserPoolId: !Ref CognitoUserPool
       Precedence: 2
-
+#--------------------
   UserApi:
     Type: AWS::Serverless::Api
     Properties:
       Name: UserApi
-      StageName: Dev
+      StageName: Prod
+      Cors:
+        AllowOrigin: "'*'"
+        AllowHeaders: "'*'"
+        AllowMethods: "'OPTIONS,POST,GET,PUT,DELETE'"
+        Auth:
+          Authorizers:
+            UserAuthorizer:
+              UserPoolArn: !GetAtt CognitoUserPool.Arn
 
   RolApi:
     Type: AWS::Serverless::Api
     Properties:
       Name: RolApi
-      StageName: Dev
+      StageName: Prod
 
   BookApi:
     Type: AWS::Serverless::Api
     Properties:
       Name: BookApi
-      StageName: Dev
+      StageName: Prod
+      Cors:
+        AllowOrigin: "'*'"
+        AllowHeaders: "'*'"
+        AllowMethods: "'OPTIONS,POST,GET,PUT,DELETE'"
+        Auth:
+          Authorizers:
+            UserAuthorizer:
+              UserPoolArn: !GetAtt CognitoUserPool.Arn
 
   CognitoApi:
     Type: AWS::Serverless::Api
     Properties:
       Name: CognitoApi
-      StageName: Dev
+      StageName: Prod
       Cors:
         AllowOrigin: "'*'"
         AllowHeaders: "'*'"
         AllowMethods: "'OPTIONS,POST,GET,PUT,DELETE'"
+
+  ProjectAuthorizer:
+    Type: AWS::ApiGateway::Authorizer
+    Properties:
+      Name: ProjectAuthorizer
+      IdentitySource: method.request.header.Authorization
+      RestApiId: !Ref ProjectApi
+      Type: COGNITO_USER_POOLS
+      ProviderARNs:
+        - !GetAtt CognitoUserPool.Arn
+
+  DefaultUnauthorizedResponseProjectApi:
+    Type: AWS::ApiGateway::GatewayResponse
+    Properties:
+      ResponseParameters:
+        gateway response.header.Access-Control-Allow-Origin: "'*'"
+        gateway response.header.Access-Control-Allow-Headers: "'*'"
+        gateway response.header.Access-Control-Allow-Methods: "'GET,PUT,POST,DELETE,OPTIONS'"
+      ResponseTemplates:
+        application/json: '{"message":"Unauthorized"}'
+      ResponseType: UNAUTHORIZED
+      RestApiId: !Ref ProjectApi
+      StatusCode: '200'
 
   HelloWorldFunction:
     Type: AWS::Serverless::Function

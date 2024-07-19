@@ -1,5 +1,6 @@
 import json
 from db_connection import get_connection, handle_response
+
 headers_cors = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': '*',
@@ -10,12 +11,15 @@ headers_cors = {
 def lambda_handler(event, context):
     connection = get_connection()
 
+    # Verifica si 'connection' es un diccionario, lo que indica un error
+    if isinstance(connection, dict):
+        return connection
+
     roles = []
 
     try:
         with connection.cursor() as cursor:
-            cursor.execute(
-                "SELECT id_rol, name_rol, status FROM roles")
+            cursor.execute("SELECT id_rol, name_rol, status FROM roles")
             result = cursor.fetchall()
 
             for row in result:

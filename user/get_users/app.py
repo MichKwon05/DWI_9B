@@ -34,7 +34,7 @@ def lambda_handler(event, context):
                 users.append(user)
 
     except Exception as e:
-        return handle_response(str(e), 'Error al obtener usuarios.', 500)
+        return handle_response(str(e), 'Error al obtener usuarios: ', 500)
 
     finally:
         connection.close()
@@ -44,7 +44,7 @@ def lambda_handler(event, context):
         'headers': headers_cors,
         "body": json.dumps({
             'statusCode': 200,
-            'message': 'get users',
+            'message': 'Usuarios obtenidos correctamente',
             'data': users
         }),
     }

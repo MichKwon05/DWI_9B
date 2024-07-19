@@ -19,14 +19,16 @@ def lambda_handler(event, context):
         return handle_response(None, 'Falta un parámetro.', 400)
 
     connection = get_connection()
-    if isinstance(connection, dict):  # check if connection is an error response
+    if isinstance(connection, dict):
         return connection
 
-    query = f"SELECT id_book, title, author, gener, year, description, synopsis, date_register, image_url, pdf_url, status FROM books WHERE id_book = {id_book}"
+    query = f"SELECT id_book, title, author, gener, year, description, synopsis, status FROM books WHERE id_book = {id_book}"
     books = []
 
     try:
-        result = execute_query(connection, query)
+        with connection.cursor() as cursor:
+            cursor.execute(query)
+            result = cursor.fetchall()
 
         for row in result:
             book = {
@@ -37,28 +39,25 @@ def lambda_handler(event, context):
                 'year': row[4],
                 'description': row[5],
                 'synopsis': row[6],
-                'date_register': row[7],
-                'image_url': row[8],
-                'pdf_url': row[9],
-                'status': row[10],
+                'status': row[8],
                 'images': [],
                 'pdfs': []
             }
 
-            image_query = f"SELECT url FROM images_books WHERE id_book = {row[0]}"
-            image_results = execute_query(connection, image_query)
+            cursor.execute("SELECT url FROM images_books WHERE id_book = %s", (row['id_book'],))
+            image_results = cursor.fetchall()
             for image_row in image_results:
-                book['images'].append(image_row[0])
+                book['images'].append(image_row['url'])
 
-            pdf_query = f"SELECT url FROM pdfs_books WHERE id_book = {row[0]}"
-            pdf_results = execute_query(connection, pdf_query)
+            cursor.execute("SELECT url FROM pdfs_books WHERE id_book = %s", (row['id_book'],))
+            pdf_results = cursor.fetchall()
             for pdf_row in pdf_results:
-                book['pdfs'].append(pdf_row[0])
+                book['pdfs'].append(pdf_row['url'])
 
             books.append(book)
 
     except Exception as e:
-        return handle_response(e, 'Ocurrió un error al obtener la información del libro.', 500)
+        return handle_response(e, 'Ocurrió un error al obtener la información del libro:', 500)
 
     finally:
         close_connection(connection)
@@ -68,7 +67,7 @@ def lambda_handler(event, context):
         'headers': headers_cors,
         'body': json.dumps({
             'statusCode': 200,
-            'message': 'Información del libro obtenida correctamente.',
+            'message': 'Libro obtenido correctamente',
             'data': books
         })
     }

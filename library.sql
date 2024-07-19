@@ -42,9 +42,6 @@ CREATE TABLE books (
     year VARCHAR(4) NOT NULL,
     description VARCHAR(300) NOT NULL,
     synopsis VARCHAR(1000) NOT NULL,
-    date_register DATE NOT NULL,
-    image_url VARCHAR(255),
-    pdf_url VARCHAR(255),
     status BOOLEAN DEFAULT TRUE
 );
 
@@ -52,8 +49,6 @@ CREATE TABLE books (
 CREATE TABLE images_books (
     id INT AUTO_INCREMENT PRIMARY KEY,
     url VARCHAR(255),
-    mimeType VARCHAR(100),
-    fileBase64 TEXT,
     id_book INT,
     FOREIGN KEY (id_book) REFERENCES books(id_book)
 );
@@ -62,8 +57,6 @@ CREATE TABLE images_books (
 CREATE TABLE pdfs_books (
     id INT AUTO_INCREMENT PRIMARY KEY,
     url VARCHAR(255),
-    mimeType VARCHAR(100),
-    fileBase64 TEXT,
     id_book INT,
     FOREIGN KEY (id_book) REFERENCES books(id_book)
 );

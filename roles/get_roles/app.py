@@ -11,7 +11,6 @@ headers_cors = {
 def lambda_handler(event, context):
     connection = get_connection()
 
-    # Verifica si 'connection' es un diccionario, lo que indica un error
     if isinstance(connection, dict):
         return connection
 
@@ -31,7 +30,7 @@ def lambda_handler(event, context):
                 roles.append(role)
 
     except Exception as e:
-        return handle_response(str(e), 'Error al obtener roles.', 500)
+        return handle_response(str(e), 'Error al obtener roles: ', 500)
 
     finally:
         connection.close()
@@ -41,7 +40,7 @@ def lambda_handler(event, context):
         'headers': headers_cors,
         "body": json.dumps({
             'statusCode': 200,
-            'message': 'get roles',
+            'message': 'Roles obtenidos correctamente',
             'data': roles
         }),
     }

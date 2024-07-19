@@ -45,6 +45,16 @@ def get_connection():
     return connection
 
 
+def execute_query(connection, query):
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(query)
+            result = cursor.fetchall()
+            return result
+    except Exception as e:
+        raise e
+
+
 def handle_response(error, message, status_code):
     return {
         'statusCode': status_code,

@@ -107,17 +107,29 @@ Resources:
       Cors:
         AllowOrigin: "'*'"
         AllowHeaders: "'*'"
-        AllowMethods: "'OPTIONS,POST,GET,PUT,DELETE'"
-        Auth:
-          Authorizers:
-            UserAuthorizer:
-              UserPoolArn: !GetAtt CognitoUserPool.Arn
+        AllowMethods:
+          - OPTIONS
+          - POST
+          - GET
+          - PUT
+          - DELETE
+        MaxAge: 600
 
   RolApi:
     Type: AWS::Serverless::Api
     Properties:
       Name: RolApi
       StageName: Prod
+      Cors:
+        AllowOrigin: "'*'"
+        AllowHeaders: "'*'"
+        AllowMethods:
+          - OPTIONS
+          - POST
+          - GET
+          - PUT
+          - DELETE
+        MaxAge: 600
 
   BookApi:
     Type: AWS::Serverless::Api
@@ -127,11 +139,13 @@ Resources:
       Cors:
         AllowOrigin: "'*'"
         AllowHeaders: "'*'"
-        AllowMethods: "'OPTIONS,POST,GET,PUT,DELETE'"
-        Auth:
-          Authorizers:
-            UserAuthorizer:
-              UserPoolArn: !GetAtt CognitoUserPool.Arn
+        AllowMethods:
+          - OPTIONS
+          - POST
+          - GET
+          - PUT
+          - DELETE
+        MaxAge: 600
 
   CognitoApi:
     Type: AWS::Serverless::Api
@@ -141,30 +155,24 @@ Resources:
       Cors:
         AllowOrigin: "'*'"
         AllowHeaders: "'*'"
-        AllowMethods: "'OPTIONS,POST,GET,PUT,DELETE'"
+        AllowMethods:
+          - OPTIONS
+          - POST
+          - GET
+          - PUT
+          - DELETE
+        MaxAge: 600
 
-  ProjectAuthorizer:
+  UserAuthorizer:
     Type: AWS::ApiGateway::Authorizer
     Properties:
-      Name: ProjectAuthorizer
+      Name: UserAuthorizerTest
       IdentitySource: method.request.header.Authorization
-      RestApiId: !Ref ProjectApi
+      RestApiId: !Ref UserApi
       Type: COGNITO_USER_POOLS
       ProviderARNs:
         - !GetAtt CognitoUserPool.Arn
 
-  DefaultUnauthorizedResponseProjectApi:
-    Type: AWS::ApiGateway::GatewayResponse
-    Properties:
-      ResponseParameters:
-        gateway response.header.Access-Control-Allow-Origin: "'*'"
-        gateway response.header.Access-Control-Allow-Headers: "'*'"
-        gateway response.header.Access-Control-Allow-Methods: "'GET,PUT,POST,DELETE,OPTIONS'"
-      ResponseTemplates:
-        application/json: '{"message":"Unauthorized"}'
-      ResponseType: UNAUTHORIZED
-      RestApiId: !Ref ProjectApi
-      StatusCode: '200'
 
   HelloWorldFunction:
     Type: AWS::Serverless::Function

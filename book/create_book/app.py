@@ -5,12 +5,14 @@ import cloudinary.uploader
 from pymysql import DatabaseError
 from requests_toolbelt.multipart import decoder
 import base64
+import os
+from .db_connection import get_connection, handle_response
 
 # Configuración de Cloudinary
 cloudinary.config(
-    cloud_name="db5zuwucd",
-    api_key="733776665585982",
-    api_secret="UHMJ6N_YU8m5ozoxqyVKB68u49U",
+    cloud_name=os.getenv("cloud_name"),
+    api_key=os.getenv("api_key"),
+    api_secret=os.getenv("api_secret"),
     secure=True
 )
 
@@ -70,17 +72,15 @@ def lambda_handler(event, context):
                 }
 
         # Conectar a la base de datos
-        connection = pymysql.connect(
-            host='bookify.c7k64au0krfa.us-east-2.rds.amazonaws.com',
-            user='admin',
-            password='quesadilla123',
-            db='library',
-        )
+        connection = get_connection()
+        if isinstance(connection, dict):  # Verificar si `get_connection` devolvió un error
+            return connection
+
         try:
             with connection.cursor() as cursor:
                 # Insertar los datos del libro en la base de datos
-                sql = """INSERT INTO books (title, author, genre, year, description, synopsis, date_register, status)
-                         VALUES (%s, %s, %s, %s, %s, %s, CURDATE(), %s)"""
+                sql = """INSERT INTO books (title, author, genre, year, description, synopsis, status)
+                         VALUES (%s, %s, %s, %s, %s, %s, %s)"""
                 cursor.execute(sql, (
                     book_data['title'], book_data['author'], book_data['genre'], book_data['year'],
                     book_data['description'], book_data['synopsis'], book_data.get('status', True))
@@ -89,13 +89,13 @@ def lambda_handler(event, context):
 
                 # Subir y registrar las imágenes en Cloudinary
                 for image in images:
-                    cloudinary_url = upload_to_cloudinary(image, folder='cover', resource_type="image")
+                    cloudinary_url = upload_to_cloudinary(image, folder='imagebook', resource_type="image")
                     sql = "INSERT INTO images_books (url, id_book) VALUES (%s, %s)"
                     cursor.execute(sql, (cloudinary_url, book_id))
 
                 # Subir y registrar el PDF en Cloudinary
                 if pdf_file:
-                    cloudinary_pdf_url = upload_to_cloudinary(pdf_file, folder='files', resource_type="raw")
+                    cloudinary_pdf_url = upload_to_cloudinary(pdf_file, folder='pdfbook', resource_type="raw")
                     sql = "INSERT INTO pdfs_books (url, id_book) VALUES (%s, %s)"
                     cursor.execute(sql, (cloudinary_pdf_url, book_id))
 
@@ -107,19 +107,13 @@ def lambda_handler(event, context):
             }
 
         except pymysql.err.MySQLError as e:
-            raise DatabaseError(f"Error en la base de datos: {e}")
+            return handle_response(e, f'Error en la base de datos: {str(e)}', 500)
 
         except Exception as e:
-            return {
-                'statusCode': 500,
-                'body': json.dumps({'error': str(e)})
-            }
+            return handle_response(e, f'Error en la operación: {str(e)}', 500)
 
         finally:
             connection.close()
 
     except Exception as e:
-        return {
-            'statusCode': 500,
-            'body': json.dumps({'error': str(e)})
-        }
+        return handle_response(e, f'Error en la operación: {str(e)}', 500)

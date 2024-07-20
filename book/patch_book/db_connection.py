@@ -1,7 +1,8 @@
+import json
 import boto3
 from botocore.exceptions import ClientError
 import pymysql
-import json
+import os
 
 headers_cors = {
     'Access-Control-Allow-Origin': '*',

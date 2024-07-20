@@ -1,6 +1,6 @@
 import json
 import boto3
-from db_conection import get_secret, calculate_secret_hash, get_connection
+from db_conection import get_secret, get_connection
 
 
 def lambda_handler(event, context):
@@ -40,7 +40,6 @@ def lambda_handler(event, context):
 def register_user(email, password, name, lastname, second_lastname, phone, id_rol, secret):
     try:
         client = boto3.client('cognito-idp')
-        secret_hash = calculate_secret_hash(secret['COGNITO_CLIENT_ID'], secret['SECRET_KEY'], email)
         response = client.sign_up(
             ClientId=secret['COGNITO_CLIENT_ID'],
             SecretHash=secret_hash,

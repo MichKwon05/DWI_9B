@@ -1,20 +1,19 @@
 import json
 import pymysql
-from pymysql import DatabaseError
+from .db_connection import get_connection
 
 
-def lambda_handler(event,context):
+def lambda_handler(event, context):
     try:
         rol_data = json.loads(event['body'])
         name_rol = rol_data['name_rol']
         status = rol_data.get('status', True)
+
+        connection = get_connection()
+        if 'statusCode' in connection and connection['statusCode'] != 200:
+            return connection
+
         try:
-            connection = pymysql.connect(
-                host='bookify.c7k64au0krfa.us-east-2.rds.amazonaws.com',
-                user='admin',
-                password='quesadilla123',
-                db='library',
-            )
             with connection.cursor() as cursor:
                 sql = "INSERT INTO roles (name_rol, status) VALUES (%s, %s)"
                 cursor.execute(sql, (name_rol, status))
@@ -23,14 +22,25 @@ def lambda_handler(event,context):
             print(f"Error: {e}")
             return {
                 'statusCode': 500,
-                'body': json.dumps('Error creating role')
+                'body': json.dumps({'error': 'Error creating role', 'details': str(e)})
             }
+        finally:
+            connection.close()
+
         return {
             'statusCode': 200,
             'body': json.dumps('Rol creado con éxito')
         }
+    except json.JSONDecodeError:
+        return {
+            'statusCode': 400,
+            'body': json.dumps({'error': 'Invalid JSON input'})
+        }
     except pymysql.err.MySQLError as e:
-        raise DatabaseError(f"Error en la base de datos: {e}")
+        return {
+            'statusCode': 500,
+            'body': json.dumps({'error': 'Database error', 'details': str(e)})
+        }
     except Exception as e:
         return {
             'statusCode': 500,

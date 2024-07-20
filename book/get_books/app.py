@@ -1,5 +1,6 @@
 import json
-from db_connection import get_connection, handle_response
+import pymysql
+from .db_connection import get_connection, handle_response  # Asegúrate de importar correctamente
 
 headers_cors = {
     'Access-Control-Allow-Origin': '*',
@@ -10,6 +11,8 @@ headers_cors = {
 
 def lambda_handler(event, context):
     connection = get_connection()
+    if isinstance(connection, dict):  # Verificar si `get_connection` devolvió un error
+        return connection
 
     books = []
 
@@ -43,6 +46,12 @@ def lambda_handler(event, context):
                     book['pdfs'].append(pdf_row['url'])
 
                 books.append(book)
+
+    except pymysql.err.MySQLError as e:
+        return handle_response(e, f'Error en la base de datos: {str(e)}', 500)
+
+    except Exception as e:
+        return handle_response(e, f'Error en la operación: {str(e)}', 500)
 
     finally:
         connection.close()

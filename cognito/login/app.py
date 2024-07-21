@@ -1,58 +1,40 @@
-import json
 import boto3
-from .db_conection import get_secret, calculate_secret_hash
+from botocore.exceptions import ClientError
+from db_conection import get_secret, get_connection, handle_response
+import json
+
+headers_cors = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': '*',
+    'Access-Control-Allow-Methods': 'OPTIONS,POST,GET,PUT,DELETE'
+}
 
 
-def lambda_handler(event, __):
+def lambda_handler(event, context):
+    body = json.loads(event['body'])
+    email = body['email']
+    password = body['password']
+
+    client = boto3.client('cognito-idp', region_name='us-east-1')
+
     try:
-        body = json.loads(event['body'])
-    except (TypeError, KeyError, json.JSONDecodeError):
-        return {
-            'statusCode': 400,
-            'body': 'Invalid request body.'
-        }
-
-    email = body.get('email')
-    password = body.get('password')
-
-    try:
-        secret = get_secret()
-        response = login_auth(email, password, secret)
-        return response
-    except Exception as e:
-        return {
-            'statusCode': 500,
-            'body': json.dumps(f'An error occurred: {str(e)}')
-        }
-
-
-def login_auth(email, password, secret):
-    try:
-        client = boto3.client('cognito-idp')
-        #secret_hash = calculate_secret_hash(secret['COGNITO_CLIENT_ID'], secret['SECRET_KEY'], email)
-
         response = client.initiate_auth(
-            ClientId="3st6oil7mhbss5rvmf2p6q3qtj",
+            ClientId='your_cognito_app_client_id',
             AuthFlow='USER_PASSWORD_AUTH',
             AuthParameters={
                 'USERNAME': email,
-                'PASSWORD': password,
-            },
+                'PASSWORD': password
+            }
         )
-        user_groups = client.admin_list_groups_for_user(
-            Username=email,
-            UserPoolId=secret['COGNITO_USER_POOL_ID']
-        )
-        role = None
-        if user_groups['Groups']:
-            role = user_groups['Groups'][0]['GroupName']
-        return {
-            'statusCode': 200,
-            'body': json.dumps({'response': response['AuthenticationResult'], 'role': role})
-        }
+    except ClientError as e:
+        return handle_response(e, f'Error during login: {str(e)}', 400)
 
-    except Exception as e:
-        return {
-            'statusCode': 500,
-            'body': json.dumps(f'An error occurred: {str(e)}')
-        }
+    return {
+        'statusCode': 200,
+        'headers': headers_cors,
+        'body': json.dumps({
+            'access_token': response['AuthenticationResult']['AccessToken'],
+            'id_token': response['AuthenticationResult']['IdToken'],
+            'refresh_token': response['AuthenticationResult']['RefreshToken']
+        })
+    }

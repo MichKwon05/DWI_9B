@@ -1,13 +1,12 @@
 import json
 import pymysql
-from .db_connection import get_connection, handle_response  # Asegúrate de importar correctamente
+from db_connection import get_connection, handle_response
 
 headers_cors = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': '*',
     'Access-Control-Allow-Methods': 'OPTIONS,POST,GET,PUT,DELETE'
 }
-
 
 def lambda_handler(event, context):
     connection = get_connection()

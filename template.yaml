@@ -71,6 +71,7 @@ Resources:
 
   CognitoUserPool:
     Type: AWS::Cognito::UserPool
+    DeletionPolicy: Retain
     Properties:
       UserPoolName: CognitoUserPool
       UsernameAttributes:
@@ -87,6 +88,7 @@ Resources:
 
   AdminUserGroup:
     Type: AWS::Cognito::UserPoolGroup
+    DeletionPolicy: Retain
     Properties:
       GroupName: Admins
       UserPoolId: !Ref CognitoUserPool
@@ -94,6 +96,7 @@ Resources:
 
   ClientUserGroup:
     Type: AWS::Cognito::UserPoolGroup
+    DeletionPolicy: Retain
     Properties:
       GroupName: Clients
       UserPoolId: !Ref CognitoUserPool

@@ -39,7 +39,8 @@ def get_connection():
             host=secrets['host'],
             user=secrets['username'],
             password=secrets['password'],
-            database=secrets['dbname']
+            database=secrets['dbname'],
+            cursorclass=pymysql.cursors.DictCursor
         )
     except Exception as e:
         return handle_response(e, f'Failed to connect to database: {str(e)}', 500)

@@ -7,7 +7,7 @@ Description: >
 
 Globals:
   Function:
-    Timeout: 3
+    Timeout: 10
 
 Resources:
   LambdaExecutionRole:
@@ -66,14 +66,14 @@ Resources:
                   - cognito-idp:AdminSetUserSettings
                   - cognito-idp:AdminUpdateAuthEventFeedback
                   - cognito-idp:AdminUserGlobalSignOut
-                Resource: 'arn:aws:cognito-idp:us-east-1:*:*'
+                Resource: 'arn:aws:cognito-idp:us-east-1:767397978009:userpool/us-east-1_kcprALGaO'
 
 
   CognitoUserPool:
     Type: AWS::Cognito::UserPool
-    DeletionPolicy: Retain
+    #DeletionPolicy: Retain
     Properties:
-      UserPoolName: CognitoUserPool
+      UserPoolName: CognitoUserBookify
       UsernameAttributes:
         - email
       AutoVerifiedAttributes:
@@ -88,18 +88,18 @@ Resources:
 
   AdminUserGroup:
     Type: AWS::Cognito::UserPoolGroup
-    DeletionPolicy: Retain
+    #DeletionPolicy: Retain
     Properties:
       GroupName: Admins
-      UserPoolId: !Ref CognitoUserPool
+      UserPoolId: !Ref CognitoUserPool  
       Precedence: 1
 
   ClientUserGroup:
     Type: AWS::Cognito::UserPoolGroup
-    DeletionPolicy: Retain
+    #DeletionPolicy: Retain
     Properties:
       GroupName: Clients
-      UserPoolId: !Ref CognitoUserPool
+      UserPoolId: !Ref CognitoUserPool  
       Precedence: 2
 #--------------------
   UserApi:
@@ -518,10 +518,10 @@ Resources:
             Path: /forgot_password
             Method: post
 
-  ChangePasswordFunction:
+  ConfirmPasswordFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: cognito/change_password/
+      CodeUri: cognito/confirm_password/
       Handler: app.lambda_handler
       Runtime: python3.12
       Role: !GetAtt LambdaExecutionRole.Arn
@@ -533,8 +533,45 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref CognitoApi
-            Path: /change_password
+            Path: /confirm_password
             Method: post
+
+  ChangeTemporaryFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: cognito/change_temporary/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Architectures:
+        - x86_64
+      Timeout: 60
+      Events:
+        GetDataStudent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref CognitoApi
+            Path: /change_temporary
+            Method: post
+
+  SignUpFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: cognito/sign_up/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Architectures:
+        - x86_64
+      Timeout: 60
+      Events:
+        GetDataStudent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref CognitoApi
+            Path: /sign_up
+            Method: post
+
 Outputs:
   HelloWorldFunction:
     Description: "Hello World Lambda Function ARN"
@@ -545,85 +582,91 @@ Outputs:
     Value: !GetAtt InsertRolAllFunction.Arn
   InsertRolAllFunctionApi:
     Description: "API Gateway endpoint URL for Dev stage for Insert Rol function"
-    Value: !Sub "https://${RolApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/insert_rol/"
+    Value: !Sub "https://${RolApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/insert_rol/"
 
   GetRolAllFunction:
     Description: "Get Rol Lambda Function ARN"
     Value: !GetAtt GetRolAllFunction.Arn
   GetRolAllFunctionApi:
     Description: "API Gateway endpoint URL for Dev stage for Get Rol function"
-    Value: !Sub "https://${RolApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/getAll/"
+    Value: !Sub "https://${RolApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/getAll/"
 
   InsertUserFunction:
     Description: "Insert User Lambda Function ARN"
     Value: !GetAtt InsertUserFunction.Arn
   InsertUserFunctionApi:
     Description: "API Gateway endpoint URL for Dev stage for Insert User function"
-    Value: !Sub "https://${UserApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/insert_user/"
+    Value: !Sub "https://${UserApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/insert_user/"
 
   UpdateUserFunction:
     Description: "Update User Lambda Function ARN"
     Value: !GetAtt UpdateUserFunction.Arn
   UpdateUserFunctionApi:
     Description: "API Gateway endpoint URL for Dev stage for Update User function"
-    Value: !Sub "https://${UserApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/update_user/"
+    Value: !Sub "https://${UserApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/update_user/"
 
   GetUserAllFunction:
     Description: "Get User Lambda Function ARN"
     Value: !GetAtt GetUserAllFunction.Arn
   GetUserAllFunctionApi:
     Description: "API Gateway endpoint URL for Dev stage for Get User function"
-    Value: !Sub "https://${UserApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/getAll/"
+    Value: !Sub "https://${UserApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/getAll/"
 
   GetUserByIdFunction:
     Description: "Get User By Id Lambda Function ARN"
     Value: !GetAtt GetUserByIdFunction.Arn
   GetUserByIdFunctionApi:
     Description: "API Gateway endpoint URL for Dev stage for Get User By Id function"
-    Value: !Sub "https://${UserApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/get/"
+    Value: !Sub "https://${UserApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/get/"
 
   PatchStatusUserFunction:
     Description: "Patch Status User Lambda Function ARN"
     Value: !GetAtt PatchStatusUserFunction.Arn
   PatchStatusUserFunctionApi:
     Description: "API Gateway endpoint URL for Dev stage for Patch Status User function"
-    Value: !Sub "https://${UserApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/updateStatus/"
+    Value: !Sub "https://${UserApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/updateStatus/"
 
   CreateBookFunction:
     Description: "Create Book Lambda Function ARN"
     Value: !GetAtt CreateBookFunction.Arn
   CreateBookFunctionApi:
     Description: "API Gateway endpoint URL for Dev stage for Create Book function"
-    Value: !Sub "https://${BookApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/create_book/"
+    Value: !Sub "https://${BookApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/create_book/"
 
   UpdateBookFunction:
     Description: "Update Book Lambda Function ARN"
     Value: !GetAtt UpdateBookFunction.Arn
   UpdateBookFunctionApi:
     Description: "API Gateway endpoint URL for Dev stage for Update Book function"
-    Value: !Sub "https://${BookApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/update_book/"
+    Value: !Sub "https://${BookApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/update_book/"
 
   PatchBookFunction:
     Description: "Patch Book Lambda Function ARN"
     Value: !GetAtt PatchBookFunction.Arn
   PatchBookFunctionApi:
     Description: "API Gateway endpoint URL for Dev stage for Patch Book function"
-    Value: !Sub "https://${BookApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/update_book_status/"
+    Value: !Sub "https://${BookApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/update_book_status/"
 
   GetBookAllFunction:
     Description: "Get All Books Lambda Function ARN"
     Value: !GetAtt GetBookAllFunction.Arn
   GetBookAllFunctionApi:
     Description: "API Gateway endpoint URL for Dev stage for Get All Books function"
-    Value: !Sub "https://${BookApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/getAll/"
+    Value: !Sub "https://${BookApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/getAll/"
 
   GetBookByIdFunction:
     Description: "Get Book By ID Lambda Function ARN"
     Value: !GetAtt GetBookByIdFunction.Arn
   GetBookByIdFunctionApi:
     Description: "API Gateway endpoint URL for Dev stage for Get Book By ID function"
-    Value: !Sub "https://${BookApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/get/"
+    Value: !Sub "https://${BookApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/get/"
 
+  LoginFunction:
+    Description: "Login Lambda Function ARN"
+    Value: !GetAtt LoginFunction.Arn
+  LoginApi:
+    Description: "API Gateway endpoint URL with path login for Prod stage to Cognito Model"
+    Value: !Sub "https://${CognitoApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/login"
 
   ForgotPasswordApi:
     Description: "API Gateway endpoint URL with path forgot_password for Prod stage to Cognito Model"
@@ -631,18 +674,20 @@ Outputs:
   ForgotPasswordFunction:
     Description: "Forgot password Lambda Function ARN"
     Value: !GetAtt ForgotPasswordFunction.Arn
-  ChangePasswordApi:
-    Description: "API Gateway endpoint URL with path change_password for Prod stage to Cognito Model"
-    Value: !Sub "https://${CognitoApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/change_password"
-  ChangePasswordFunction:
-    Description: "Change password Lambda Function ARN"
-    Value: !GetAtt ChangePasswordFunction.Arn
-  LoginFunction:
-    Description: "Login Lambda Function ARN"
-    Value: !GetAtt LoginFunction.Arn
-  LoginApi:
-    Description: "API Gateway endpoint URL with path login for Prod stage to Cognito Model"
-    Value: !Sub "https://${CognitoApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/login"
+
+  ChangeTemporaryApi:
+    Description: "API Gateway endpoint URL with path change_temporary for Prod stage to Cognito Model"
+    Value: !Sub "https://${CognitoApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/change_temporary"
+  ChangeTemporaryFunction:
+      Description: "Change temporary Lambda Function ARN"
+      Value: !GetAtt ChangeTemporaryFunction.Arn
+
+  SignUpApi:
+    Description: "API Gateway endpoint URL with path sign_up for Prod stage to Cognito Model"
+    Value: !Sub "https://${CognitoApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/sign_up"
+  SignUpFunction:
+    Description: "Sign up Lambda Function ARN"
+    Value: !GetAtt SignUpFunction.Arn
 
   LambdaExecutionRoleArn:
     Description: "Lambda Execution Role ARN"

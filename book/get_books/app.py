@@ -8,6 +8,7 @@ headers_cors = {
     'Access-Control-Allow-Methods': 'OPTIONS,POST,GET,PUT,DELETE'
 }
 
+
 def lambda_handler(event, context):
     connection = get_connection()
     if isinstance(connection, dict):  # Verificar si `get_connection` devolvió un error

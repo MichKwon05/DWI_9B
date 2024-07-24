@@ -1,6 +1,6 @@
 import boto3
 from botocore.exceptions import ClientError
-from db_conection import get_secret, get_connection, handle_response
+from .db_conection import get_secret, get_connection, handle_response
 import json
 import string
 import random
@@ -16,33 +16,40 @@ headers_cors = {
 def lambda_handler(event, context):
     body = json.loads(event['body'])
     email = body['email']
-    password = body['password']
-    phone = body['phone']
-
     password = generate_temporary_password()
+    phone = body['phone']
+    name = body.get('name', '')
+    lastname = body.get('lastname', '')
+    second_lastname = body.get('second_lastname', '')
 
     client = boto3.client('cognito-idp', region_name='us-east-1')
 
     try:
+        # Create user in Cognito
         response = client.admin_create_user(
-            UserPoolId=os.getenv("USER_POOL_ID"),
+            UserPoolId='us-east-1_kcprALGaO',
             Username=email,
             UserAttributes=[
                 {'Name': 'email', 'Value': email},
                 {'Name': 'phone_number', 'Value': phone},
-                {'Name': 'email_verified', 'Value': 'true'}
+                {'Name': 'email_verified', 'Value': 'false'}
             ],
-            TemporaryPassword=password,
-            MessageAction='SUPPRESS'
+            TemporaryPassword=password
+            #MessageAction='SUPPRESS'
         )
 
+        # Add user to 'clients' group
         client.admin_add_user_to_group(
-            UserPoolId='your_user_pool_id',
+            UserPoolId='us-east-1_kcprALGaO',
             Username=email,
-            GroupName='clients'
+            GroupName='Clients'
         )
 
-        send_temporary_password_email(email, password)
+        # Send temporary password email
+        #send_temporary_password_email(email, password)
+
+        # Insert user into the database
+        insert_into_user(email, name, lastname, second_lastname, phone, password)
 
     except ClientError as e:
         return handle_response(e, f'Error during registration: {str(e)}', 400)
@@ -77,7 +84,7 @@ def send_temporary_password_email(email, temp_password):
 
     try:
         response = ses_client.send_email(
-            Source='your_verified_email@example.com',
+            Source='no-reply@verificationemail.com',
             Destination={
                 'ToAddresses': [email]
             },
@@ -96,3 +103,19 @@ def send_temporary_password_email(email, temp_password):
         print(response['MessageId'])
     except ClientError as e:
         print(f"Error sending email: {e}")
+
+
+def insert_into_user(email, name, lastname, second_lastname, phone, password):
+    connection = get_connection()
+
+    try:
+        with connection.cursor() as cursor:
+            insert_query = "INSERT INTO users (email, name, lastname, second_lastname, phone, password, id_rol, status) VALUES (%s, %s, %s, %s, %s, %s)"
+            cursor.execute(insert_query, (email, name, lastname, second_lastname, phone, password, 2, True))
+            connection.commit()
+
+    except Exception as e:
+        return handle_response(e, 'Ocurrió un error al registrar el usuario.', 500)
+
+    finally:
+        connection.close()

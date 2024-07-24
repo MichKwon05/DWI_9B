@@ -1,94 +1,73 @@
 import json
-import pymysql
+from db_connetion import get_secret, get_connection
+
+headers_cors = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': '*',
+    'Access-Control-Allow-Methods': 'OPTIONS,POST,GET,PUT,DELETE'
+}
 
 
 def lambda_handler(event, context):
-    connection = pymysql.connect(
-        host='bookify.c7k64au0krfa.us-east-2.rds.amazonaws.com',
-        user='admin',
-        password='quesadilla123',
-        db='library',
-    )
     try:
-
-        if event['httpMethod'] == 'GET':
-            if not event.get('body'):
-                return {
-                    'statusCode': 400,
-                    'body': json.dumps({'error': 'Missing body in the event'})
-                }
-
-            request_body = json.loads(event['body'])
-
-            if 'id_user' not in request_body:
-                return {
-                    'statusCode': 400,
-                    'body': json.dumps({'error': 'Missing id_user in the body'})
-                }
-
-            user_id = request_body['id_user']
-
-            with connection.cursor() as cursor:
-                sql = "SELECT * FROM users WHERE id_user = %s"
-                cursor.execute(sql, user_id)
-                result = cursor.fetchone()
-
-            if not result:
-                return {
-                    'statusCode': 404,
-                    'body': json.dumps({'error': f'User with ID {user_id} not found'})
-                }
-
-            return {
-                'statusCode': 200,
-                'body': json.dumps(result)
-            }
-
-        elif event['httpMethod'] == 'PATCH':
-            if not event.get('body'):
-                return {
-                    'statusCode': 400,
-                    'body': json.dumps({'error': 'Missing body in the event'})
-                }
-
-            request_body = json.loads(event['body'])
-
-            if 'id_user' not in request_body or 'status' not in request_body:
-                return {
-                    'statusCode': 400,
-                    'body': json.dumps({'error': 'Missing id_user or status in the body'})
-                }
-
-            user_id = request_body['id_user']
-            new_status = request_body['status']
-
-            with connection.cursor() as cursor:
-                sql = "UPDATE users SET status = %s WHERE id_user = %s"
-                cursor.execute(sql, (new_status, user_id))
-                connection.commit()
-
-            return {
-                'statusCode': 200,
-                'body': json.dumps(
-                    {'message': f'Estado del usuario con ID {user_id} actualizado correctamente a {new_status}'}
-                )
-            }
-
-        else:
-            return {
-                'statusCode': 405,
-                'body': json.dumps({'error': 'Método HTTP no permitido'})
-            }
-    except KeyError as e:
+        body = json.loads(event['body'])
+    except (TypeError, KeyError, json.JSONDecodeError):
         return {
             'statusCode': 400,
-            'body': json.dumps({'error': f'Parámetro faltante en la solicitud: {str(e)}'})
+            'headers': headers_cors,
+            'body': json.dumps({'message': 'Invalid request body.'})
         }
+
+    user_id = body.get('id_user')
+    status = body.get('status')
+
+    if user_id is None or status is None:
+        return {
+            'statusCode': 400,
+            'headers': headers_cors,
+            'body': json.dumps({'message': 'Missing required parameters.'})
+        }
+
+    if not isinstance(status, bool):
+        return {
+            'statusCode': 400,
+            'headers': headers_cors,
+            'body': json.dumps({'message': 'Status must be a boolean.'})
+        }
+
+    try:
+        connection = get_connection()
+        response = update_user_status(user_id, status, connection)
+        return response
     except Exception as e:
         return {
             'statusCode': 500,
-            'body': json.dumps({'error': str(e)})
+            'headers': headers_cors,
+            'body': json.dumps({'message': f'An error occurred: {str(e)}'})
+        }
+
+
+def update_user_status(user_id, status, connection):
+    try:
+        with connection.cursor() as cursor:
+            update_query = """
+            UPDATE users
+            SET status = %s
+            WHERE id_user = %s
+            """
+            cursor.execute(update_query, (status, user_id))
+            connection.commit()
+    except Exception as e:
+        return {
+            'statusCode': 500,
+            'headers': headers_cors,
+            'body': json.dumps({'message': f'An error occurred while updating the user status: {str(e)}'})
         }
     finally:
-        if connection:
-            connection.close()
+        connection.close()
+
+    return {
+        'statusCode': 200,
+        'headers': headers_cors,
+        'body': json.dumps({'message': 'User status updated successfully.'})
+    }

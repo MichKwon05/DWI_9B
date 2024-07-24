@@ -1,53 +1,83 @@
 import json
-import pymysql
+import boto3
+from db_connection import get_secret, get_connection
+
+headers_cors = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': '*',
+    'Access-Control-Allow-Methods': 'OPTIONS,POST,GET,PUT,DELETE'
+}
 
 
 def lambda_handler(event, context):
-    connection = pymysql.connect(
-        host='bookify.c7k64au0krfa.us-east-2.rds.amazonaws.com',
-        user='admin',
-        password='quesadilla123',
-        db='library',
-    )
+    try:
+        body = json.loads(event['body'])
+    except (TypeError, KeyError, json.JSONDecodeError):
+        return {
+            'statusCode': 400,
+            'headers': headers_cors,
+            'body': json.dumps({'message': 'Invalid request body.'})
+        }
+
+    user_id = body.get('id_user')
+    name = body.get('name')
+    lastname = body.get('lastname')
+    second_lastname = body.get('second_lastname')
+    email = body.get('email')
+    phone = body.get('phone')
+    id_rol = body.get('id_rol')
+    password = body.get('password')  # Only include if you want to allow updating passwords
+
+    if not user_id or not name or not lastname or not email or not phone:
+        return {
+            'statusCode': 400,
+            'headers': headers_cors,
+            'body': json.dumps({'message': 'Missing required parameters.'})
+        }
 
     try:
-        if 'body' not in event or not event['body']:
-            return {
-                'statusCode': 400,
-                'body': json.dumps({'error': 'Missing body in the event'})
-            }
-
-        user = json.loads(event['body'])
-
-        if 'id_user' not in user:
-            return {
-                'statusCode': 400,
-                'body': json.dumps({'error': 'Missing id_user in the body'})
-            }
-
-        user_id = user['id_user']
-
-        with connection.cursor() as cursor:
-            sql = """UPDATE users SET name = %s, lastname = %s, second_lastname = %s, email = %s, password = %s, phone = %s, id_rol = %s, status = %s WHERE id_user = %s"""
-            cursor.execute(sql, (
-                user['name'], user['lastname'], user.get('second_lastname', None), user['email'], user['password'],
-                user['phone'], user['id_rol'], user['status'], user_id))
-            connection.commit()
-
-        return {
-            'statusCode': 200,
-            'body': json.dumps('Usuario modificado correctamente')
-        }
-    except pymysql.err.MySQLError as e:
-        return {
-            'statusCode': 500,
-            'body': json.dumps({'error': f"Error en la base de datos: {e}"})
-        }
+        connection = get_connection()
+        response = update_user(user_id, name, lastname, second_lastname, email, phone, id_rol, password, connection)
+        return response
     except Exception as e:
         return {
             'statusCode': 500,
-            'body': json.dumps({'error': str(e)})
+            'headers': headers_cors,
+            'body': json.dumps({'message': f'An error occurred: {str(e)}'})
+        }
+
+
+def update_user(user_id, name, lastname, second_lastname, email, phone, id_rol, password, connection):
+    try:
+        with connection.cursor() as cursor:
+            update_query = """
+            UPDATE users
+            SET name = %s,
+                lastname = %s,
+                second_lastname = %s,
+                email = %s,
+                phone = %s,
+                id_rol = %s
+            WHERE id_user = %s
+            """
+            params = (name, lastname, second_lastname, email, phone, id_rol, user_id)
+            if password:  # Update password only if provided
+                update_query += ", password = %s"
+                params += (password,)
+
+            cursor.execute(update_query, params)
+            connection.commit()
+    except Exception as e:
+        return {
+            'statusCode': 500,
+            'headers': headers_cors,
+            'body': json.dumps({'message': f'An error occurred while updating the user: {str(e)}'})
         }
     finally:
-        if connection:
-            connection.close()
+        connection.close()
+
+    return {
+        'statusCode': 200,
+        'headers': headers_cors,
+        'body': json.dumps({'message': 'User updated successfully.'})
+    }

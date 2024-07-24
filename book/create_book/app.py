@@ -2,7 +2,6 @@ import json
 import pymysql
 import cloudinary
 import cloudinary.uploader
-from pymysql import DatabaseError
 from requests_toolbelt.multipart import decoder
 import base64
 import os

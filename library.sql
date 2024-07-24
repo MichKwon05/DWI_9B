@@ -12,7 +12,6 @@ CREATE TABLE users (
     name VARCHAR(200) NOT NULL,
     lastname VARCHAR(200) NOT NULL,
     second_lastname VARCHAR(200),
-    id_cognito VARCHAR(155),
     email VARCHAR(100) NOT NULL,
     password VARCHAR(200) NOT NULL,
     phone VARCHAR(12) NOT NULL,

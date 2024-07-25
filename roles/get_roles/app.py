@@ -1,6 +1,8 @@
 import json
-from db_connection import get_connection, handle_response
-
+try:
+    from db_connection import get_secret, get_connection, handle_response
+except ImportError:
+    from .db_connection import get_secret, get_connection, handle_response
 headers_cors = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': '*',

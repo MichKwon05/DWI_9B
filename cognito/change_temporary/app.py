@@ -1,7 +1,10 @@
 import boto3
 from botocore.exceptions import ClientError
 import json
-import os
+try:
+    from db_conection import get_secret, get_connection, handle_response
+except ImportError:
+    from .db_conection import get_secret, get_connection, handle_response
 
 headers_cors = {
     'Access-Control-Allow-Origin': '*',
@@ -9,17 +12,20 @@ headers_cors = {
     'Access-Control-Allow-Methods': 'OPTIONS,POST,GET,PUT,DELETE'
 }
 
-region_name = 'us-east-1'
-user_pool_id = os.getenv('USER_POOL_ID')
-
 
 def lambda_handler(event, context):
-    body = json.loads(event['body'])
-    email = body['email']
-    temporary_password = body['temporary_password']
-    new_password = body['new_password']
+    secrets = get_secret()
+    client_id = secrets['client_id']
+    try:
+        body = json.loads(event['body'])
+    except (TypeError, json.JSONDecodeError) as e:
+        return handle_response(e, 'Error al analizar el cuerpo del evento.', 400)
 
-    client = boto3.client('cognito-idp', region_name=region_name)
+    email = body.get('email')
+    temporary_password = body.get('temporary_password')
+    new_password = body.get('new_password')
+
+    client = boto3.client('cognito-idp', region_name='us-east-1')
 
     try:
         # Authenticate the user with the temporary password
@@ -29,7 +35,7 @@ def lambda_handler(event, context):
                 'USERNAME': email,
                 'PASSWORD': temporary_password
             },
-            ClientId=os.getenv('CLIENT_ID')
+            ClientId=client_id
         )
 
         # Use the authentication tokens to change the password

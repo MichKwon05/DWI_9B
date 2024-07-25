@@ -5,7 +5,10 @@ import cloudinary.uploader
 from requests_toolbelt.multipart import decoder
 import base64
 import os
-from .db_connection import get_connection, handle_response
+try:
+    from db_connection import get_secret, get_connection, handle_response
+except ImportError:
+    from .db_connection import get_secret, get_connection, handle_response
 
 # Configuración de Cloudinary
 cloudinary.config(

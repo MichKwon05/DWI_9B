@@ -1,5 +1,8 @@
 import json
-from .db_connection import get_connection, handle_response
+try:
+    from db_connection import get_secret, get_connection, handle_response
+except ImportError:
+    from .db_connection import get_secret, get_connection, handle_response
 import pymysql
 
 headers_cors = {

@@ -1,7 +1,10 @@
 import boto3
 from botocore.exceptions import ClientError
 import json
-import os
+try:
+    from db_conection import get_secret, get_connection, handle_response
+except ImportError:
+    from .db_conection import get_secret, get_connection, handle_response
 
 headers_cors = {
     'Access-Control-Allow-Origin': '*',
@@ -9,12 +12,17 @@ headers_cors = {
     'Access-Control-Allow-Methods': 'OPTIONS,POST,GET,PUT,DELETE'
 }
 
-client_id = os.getenv('CLIENT_ID')
 region_name = 'us-east-1'
 
 
 def lambda_handler(event, context):
-    body = json.loads(event.get('body', {}))
+    secrets = get_secret()
+    client_id = secrets['client_id']
+    try:
+        body = json.loads(event['body'])
+    except (TypeError, json.JSONDecodeError) as e:
+        return handle_response(e, 'Error al analizar el cuerpo del evento.', 400)
+
     email = body.get('email')
     confirmation_code = body.get('confirmation_code')
     new_password = body.get('new_password')
@@ -25,7 +33,7 @@ def lambda_handler(event, context):
     client = boto3.client('cognito-idp', region_name=region_name)
 
     try:
-        response = client.confirm_forgot_password(
+        client.confirm_forgot_password(
             ClientId=client_id,
             Username=email,
             ConfirmationCode=confirmation_code,
@@ -37,7 +45,7 @@ def lambda_handler(event, context):
     return {
         'statusCode': 200,
         'headers': headers_cors,
-        'body': json.dumps({'message': 'Password has been reset successfully'})
+        'body': json.dumps({'message': 'Password has been reset successfully'}),
     }
 
 

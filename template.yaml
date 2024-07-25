@@ -45,6 +45,7 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
+                  - cognito-idp:InitiateAuth
                   - cognito-idp:AdminInitiateAuth
                   - cognito-idp:AdminRespondToAuthChallenge
                   - cognito-idp:AdminSetUserPassword
@@ -66,8 +67,7 @@ Resources:
                   - cognito-idp:AdminSetUserSettings
                   - cognito-idp:AdminUpdateAuthEventFeedback
                   - cognito-idp:AdminUserGlobalSignOut
-                Resource: 'arn:aws:cognito-idp:us-east-1:767397978009:userpool/us-east-1_kcprALGaO'
-
+                Resource: 'arn:aws:cognito-idp:us-east-1:*:*'
 
   CognitoUserPool:
     Type: AWS::Cognito::UserPool

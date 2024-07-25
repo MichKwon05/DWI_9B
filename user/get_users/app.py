@@ -1,5 +1,8 @@
 import json
-from db_connection import get_connection, handle_response
+try:
+    from db_connection import get_secret, get_connection, handle_response, execute_query
+except ImportError:
+    from .db_connection import get_secret, get_connection, handle_response, execute_query
 headers_cors = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': '*',
@@ -15,7 +18,7 @@ def lambda_handler(event, context):
     try:
         with connection.cursor() as cursor:
             cursor.execute(
-                "SELECT id_user, name, lastname, second_lastname, id_cognito, email, password, phone, id_rol, status FROM users")
+                "SELECT id_user, name, lastname, second_lastname, email, password, phone, id_rol, status FROM users")
             result = cursor.fetchall()
 
             for row in result:
@@ -24,12 +27,11 @@ def lambda_handler(event, context):
                     'name': row[1],
                     'lastname': row[2],
                     'second_lastname': row[3],
-                    'id_cognito': row[4],
-                    'email': row[5],
-                    'password': row[6],
-                    'phone': row[7],
-                    'id_rol': row[8],
-                    'status': row[9]
+                    'email': row[4],
+                    'password': row[5],
+                    'phone': row[6],
+                    'id_rol': row[7],
+                    'status': row[8]
                 }
                 users.append(user)
 

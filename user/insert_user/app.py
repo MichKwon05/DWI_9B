@@ -1,7 +1,9 @@
 import json
 import boto3
-from db_conection import get_secret, get_connection
-
+try:
+    from db_conection import get_secret, get_connection, handle_response
+except ImportError:
+    from .db_conection import get_secret, get_connection, handle_response
 headers_cors = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': '*',
@@ -75,15 +77,15 @@ def register_user(email, password, name, lastname, second_lastname, phone, id_ro
     return insert_response
 
 
-def insert_into_user(email, id_cognito, name, lastname, second_lastname, phone, id_rol, password):
+def insert_into_user(email, name, lastname, second_lastname, phone, id_rol, password):
     connection = get_connection()
     try:
         with connection.cursor() as cursor:
             insert_query = """
-            INSERT INTO users (email, id_cognito, name, lastname, second_lastname, phone, id_rol, password)
+            INSERT INTO users (email, name, lastname, second_lastname, phone, id_rol, password)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             """
-            cursor.execute(insert_query, (email, id_cognito, name, lastname, second_lastname, phone, id_rol, password))
+            cursor.execute(insert_query, (email, name, lastname, second_lastname, phone, id_rol, password))
             connection.commit()
     except Exception as e:
         return {

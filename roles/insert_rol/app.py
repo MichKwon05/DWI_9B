@@ -1,6 +1,10 @@
 import json
 import pymysql
-from .db_connection import get_connection
+
+try:
+    from db_connection import get_secret, get_connection, handle_response
+except ImportError:
+    from .db_connection import get_secret, get_connection, handle_response
 
 
 def lambda_handler(event, context):

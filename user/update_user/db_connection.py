@@ -40,7 +40,9 @@ def get_connection():
             password=secrets['password'],
             database=secrets['dbname']
         )
+        print("Database connection established successfully.")
     except Exception as e:
+        print(f"Failed to connect to database: {str(e)}")
         return handle_response(e, f'Failed to connect to database: {str(e)}', 500)
     return connection
 

@@ -1,6 +1,9 @@
 import json
-from db_connetion import get_secret, get_connection
 
+try:
+    from db_connetion import get_secret, get_connection, handle_response
+except ImportError:
+    from .db_connetion import get_secret, get_connection, handle_response
 headers_cors = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': '*',
@@ -25,7 +28,7 @@ def lambda_handler(event, context):
         return {
             'statusCode': 400,
             'headers': headers_cors,
-            'body': json.dumps({'message': 'Missing required parameters.'})
+            'body': json.dumps({'message': 'Faltan parámetros'})
         }
 
     if not isinstance(status, bool):
@@ -37,6 +40,13 @@ def lambda_handler(event, context):
 
     try:
         connection = get_connection()
+        user_exists = check_user_exists(user_id, connection)
+        if not user_exists:
+            return {
+                'statusCode': 404,
+                'headers': headers_cors,
+                'body': json.dumps({'message': 'Usuario no encontrado'})
+            }
         response = update_user_status(user_id, status, connection)
         return response
     except Exception as e:
@@ -45,6 +55,19 @@ def lambda_handler(event, context):
             'headers': headers_cors,
             'body': json.dumps({'message': f'An error occurred: {str(e)}'})
         }
+
+
+def check_user_exists(id_user, connection):
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT COUNT(*) FROM users WHERE id_user = %s",
+                (id_user,)
+            )
+            result = cursor.fetchone()
+            return result[0] > 0
+    except Exception as e:
+        raise e
 
 
 def update_user_status(user_id, status, connection):
@@ -61,7 +84,7 @@ def update_user_status(user_id, status, connection):
         return {
             'statusCode': 500,
             'headers': headers_cors,
-            'body': json.dumps({'message': f'An error occurred while updating the user status: {str(e)}'})
+            'body': json.dumps({'message': f'Error al actualizar el status: {str(e)}'})
         }
     finally:
         connection.close()
@@ -69,5 +92,5 @@ def update_user_status(user_id, status, connection):
     return {
         'statusCode': 200,
         'headers': headers_cors,
-        'body': json.dumps({'message': 'User status updated successfully.'})
+        'body': json.dumps({'message': 'Estado cambiado correctamente'})
     }

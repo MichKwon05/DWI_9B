@@ -1,10 +1,12 @@
 import boto3
 from botocore.exceptions import ClientError
-from .db_conection import get_secret, get_connection, handle_response
+try:
+    from db_conection import get_secret, get_connection, handle_response
+except ImportError:
+    from .db_conection import get_secret, get_connection, handle_response
 import json
 import string
 import random
-import os
 
 headers_cors = {
     'Access-Control-Allow-Origin': '*',
@@ -14,20 +16,25 @@ headers_cors = {
 
 
 def lambda_handler(event, context):
-    body = json.loads(event['body'])
-    email = body['email']
+    secrets = get_secret()
+    try:
+        body = json.loads(event['body'])
+    except (TypeError, json.JSONDecodeError) as e:
+        return handle_response(e, 'Error al analizar el cuerpo del evento.', 400)
+
+    email = body.get('email')
     password = generate_temporary_password()
-    phone = body['phone']
-    name = body.get('name', '')
-    lastname = body.get('lastname', '')
-    second_lastname = body.get('second_lastname', '')
+    phone = body.get('phone')
+    name = body.get('name')
+    lastname = body.get('lastname')
+    second_lastname = body.get('second_lastname')
 
     client = boto3.client('cognito-idp', region_name='us-east-1')
 
     try:
         # Create user in Cognito
-        response = client.admin_create_user(
-            UserPoolId='us-east-1_kcprALGaO',
+        client.admin_create_user(
+            UserPoolId=secrets['user_pool_id'],
             Username=email,
             UserAttributes=[
                 {'Name': 'email', 'Value': email},
@@ -35,18 +42,14 @@ def lambda_handler(event, context):
                 {'Name': 'email_verified', 'Value': 'false'}
             ],
             TemporaryPassword=password
-            #MessageAction='SUPPRESS'
         )
 
         # Add user to 'clients' group
         client.admin_add_user_to_group(
-            UserPoolId='us-east-1_kcprALGaO',
+            UserPoolId=secrets['user_pool_id'],
             Username=email,
             GroupName='Clients'
         )
-
-        # Send temporary password email
-        #send_temporary_password_email(email, password)
 
         # Insert user into the database
         insert_into_user(email, name, lastname, second_lastname, phone, password)
@@ -110,11 +113,12 @@ def insert_into_user(email, name, lastname, second_lastname, phone, password):
 
     try:
         with connection.cursor() as cursor:
-            insert_query = "INSERT INTO users (email, name, lastname, second_lastname, phone, password, id_rol, status) VALUES (%s, %s, %s, %s, %s, %s)"
-            cursor.execute(insert_query, (email, name, lastname, second_lastname, phone, password, 2, True))
+            insert_query = """INSERT INTO users (email, name, lastname, second_lastname, phone, password, id_rol, status) VALUES (%s, %s, %s, %s, %s, %s, 2, True)"""
+            cursor.execute(insert_query, (email, name, lastname, second_lastname, phone, password))
             connection.commit()
 
     except Exception as e:
+        print(f"Error al insertar datos: {e}")
         return handle_response(e, 'Ocurrió un error al registrar el usuario.', 500)
 
     finally:

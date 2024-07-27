@@ -24,7 +24,7 @@ def lambda_handler(event, context):
 
     email = body.get('email')
     password = generate_temporary_password()
-    phone = body.get('phone')
+    phone_number = body.get('phone_number')
     name = body.get('name')
     lastname = body.get('lastname')
     second_lastname = body.get('second_lastname')
@@ -38,7 +38,6 @@ def lambda_handler(event, context):
             Username=email,
             UserAttributes=[
                 {'Name': 'email', 'Value': email},
-                {'Name': 'phone_number', 'Value': phone},
                 {'Name': 'email_verified', 'Value': 'false'}
             ],
             TemporaryPassword=password
@@ -52,7 +51,7 @@ def lambda_handler(event, context):
         )
 
         # Insert user into the database
-        insert_into_user(email, name, lastname, second_lastname, phone, password)
+        insert_into_user(email, name, lastname, second_lastname, phone_number, password)
 
     except ClientError as e:
         return handle_response(e, f'Error during registration: {str(e)}', 400)
@@ -60,7 +59,7 @@ def lambda_handler(event, context):
     return {
         'statusCode': 200,
         'headers': headers_cors,
-        'body': json.dumps({'message': 'User registered successfully'})
+        'body': json.dumps({'message': 'User registered successfully, verification email sent'})
     }
 
 
@@ -80,41 +79,14 @@ def generate_temporary_password(length=12):
             return password
 
 
-def send_temporary_password_email(email, temp_password):
-    ses_client = boto3.client('ses', region_name='us-east-1')
-    subject = "Your Temporary Password"
-    body_text = f"Hello,\n\nYour temporary password is: {temp_password}\n\nBest regards,\nYour Team"
-
-    try:
-        response = ses_client.send_email(
-            Source='no-reply@verificationemail.com',
-            Destination={
-                'ToAddresses': [email]
-            },
-            Message={
-                'Subject': {
-                    'Data': subject
-                },
-                'Body': {
-                    'Text': {
-                        'Data': body_text
-                    }
-                }
-            }
-        )
-        print("Email sent! Message ID:"),
-        print(response['MessageId'])
-    except ClientError as e:
-        print(f"Error sending email: {e}")
-
-
-def insert_into_user(email, name, lastname, second_lastname, phone, password):
+def insert_into_user(email, name, lastname, second_lastname, phone_number, password):
     connection = get_connection()
 
     try:
         with connection.cursor() as cursor:
             insert_query = """INSERT INTO users (email, name, lastname, second_lastname, phone, password, id_rol, status) VALUES (%s, %s, %s, %s, %s, %s, 2, True)"""
-            cursor.execute(insert_query, (email, name, lastname, second_lastname, phone, password))
+            cursor.execute(insert_query, (email, name, lastname, second_lastname, phone_number, password))
+            print(f"User {email} inserted successfully.")
             connection.commit()
 
     except Exception as e:

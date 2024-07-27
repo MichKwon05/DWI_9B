@@ -1,6 +1,8 @@
 import boto3
 from botocore.exceptions import ClientError
 import json
+from werkzeug.security import generate_password_hash
+
 try:
     from db_conection import get_secret, get_connection, handle_response
 except ImportError:
@@ -39,6 +41,14 @@ def lambda_handler(event, context):
             ConfirmationCode=confirmation_code,
             Password=new_password
         )
+
+        hashed_password = generate_password_hash(new_password)
+
+        connection = get_connection()
+        with connection.cursor() as cursor:
+            sql = "UPDATE users SET password=%s WHERE email=%s"
+            cursor.execute(sql, (hashed_password, email))
+        connection.commit()
     except ClientError as e:
         return handle_response(e, f'Error confirming forgot password: {str(e)}', 400)
 

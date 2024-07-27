@@ -73,7 +73,7 @@ Resources:
     Type: AWS::Cognito::UserPool
     #DeletionPolicy: Retain
     Properties:
-      UserPoolName: CognitoUserBookify
+      UserPoolName: CognitoUsersBookify
       UsernameAttributes:
         - email
       AutoVerifiedAttributes:

@@ -1,6 +1,7 @@
 import boto3
 from botocore.exceptions import ClientError
 import json
+
 try:
     from db_conection import get_secret, get_connection, handle_response
 except ImportError:
@@ -16,39 +17,72 @@ headers_cors = {
 
 def lambda_handler(event, context):
     secrets = get_secret()
-    client_id = secrets['client_id']
-    try:
-        body = json.loads(event['body'])
-    except (TypeError, json.JSONDecodeError) as e:
-        return handle_response(e, 'Error al analizar el cuerpo del evento.', 400)
-
-    email = body.get('email')
-    if not email:
-        return handle_response('Missing email', 'Invalid input', 400)
-
     client = boto3.client('cognito-idp', region_name='us-east-1')
-
+    client_id = secrets['client_id']
+    user_pool_id = secrets['user_pool_id']
     try:
+        # Parsea el body del evento
+        body_parameters = json.loads(event["body"])
+        email = body_parameters.get('email')
+
+        # Obtener detalles del usuario
+        user_details = client.admin_get_user(
+            UserPoolId=user_pool_id,
+            Username=email
+        )
+
+        # Verificar si el email está verificado
+        email_verified = False
+        for attribute in user_details['UserAttributes']:
+            if attribute['Name'] == 'email_verified' and attribute['Value'] == 'true':
+                email_verified = True
+                break
+
+        # Si el email no está verificado, actualizar el atributo
+        if not email_verified:
+            client.admin_update_user_attributes(
+                UserPoolId=user_pool_id,
+                Username=email,
+                UserAttributes=[
+                    {
+                        'Name': 'email_verified',
+                        'Value': 'true'
+                    }
+                ]
+            )
+
         response = client.forgot_password(
             ClientId=client_id,
             Username=email
         )
-    except ClientError as e:
-        return handle_response(e, f'Error initiating forgot password: {str(e)}', 400)
 
-    return {
-        'statusCode': 200,
-        'headers': headers_cors,
-        'body': json.dumps({'message': 'Password reset initiated. Check your email for the verification code.'}),
-        'response': response
-    }
-def handle_response(error, message, status_code):
-    return {
-        'statusCode': status_code,
-        'headers': headers_cors,
-        'body': json.dumps({
-            'statusCode': status_code,
-            'message': message,
-            'error': str(error)
-        })
-    }
+        return {
+            'statusCode': 200,
+            'headers': headers_cors,
+            'body': json.dumps({"message": "Confirmation code sent to user's email", "response": response})
+        }
+    except json.JSONDecodeError as jde:
+        return {
+            'statusCode': 400,
+            'headers': headers_cors,
+            'body': json.dumps({"error_message": "Invalid JSON format in request body", "details": str(jde)})
+        }
+    except ValueError as ve:
+        return {
+            'statusCode': 400,
+            'headers': headers_cors,
+            'body': json.dumps({"error_message": str(ve)})
+        }
+    except ClientError as ce:
+        return {
+            'statusCode': 400,
+            'headers': headers_cors,
+            'body': json.dumps({"error_message": ce.response['Error']['Message']})
+        }
+    except Exception as e:
+        return {
+            'statusCode': 500,
+            'headers': headers_cors,
+            'body': json.dumps({"error_message": "An unexpected error occurred", "details": str(e)})
+        }
+

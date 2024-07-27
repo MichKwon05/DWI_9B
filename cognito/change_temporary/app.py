@@ -1,6 +1,8 @@
 import boto3
 from botocore.exceptions import ClientError
 import json
+from werkzeug.security import generate_password_hash
+
 try:
     from db_conection import get_secret, get_connection, handle_response
 except ImportError:
@@ -38,16 +40,46 @@ def lambda_handler(event, context):
             ClientId=client_id
         )
 
-        # Use the authentication tokens to change the password
-        access_token = response['AuthenticationResult']['AccessToken']
-        client.change_password(
-            PreviousPassword=temporary_password,
-            ProposedPassword=new_password,
-            AccessToken=access_token
-        )
+        # Print or log the response for debugging
+        print("Auth Response:", response)
+
+        # Check if AuthenticationResult is in the response
+        if 'ChallengeName' in response:
+            if response['ChallengeName'] == 'NEW_PASSWORD_REQUIRED':
+                # Complete the new password challenge
+                session = response['Session']
+                client.respond_to_auth_challenge(
+                    ChallengeName='NEW_PASSWORD_REQUIRED',
+                    ChallengeResponses={
+                        'NEW_PASSWORD': new_password,
+                        'USERNAME': email
+                    },
+                    ClientId=client_id,
+                    Session=session
+                )
+            else:
+                return handle_response(None, 'Authentication failed or challenge not expected.', 400)
+        else:
+            # Use the authentication tokens to change the password
+            access_token = response['AuthenticationResult']['AccessToken']
+            client.change_password(
+                PreviousPassword=temporary_password,
+                ProposedPassword=new_password,
+                AccessToken=access_token
+            )
+
+            hashed_password = generate_password_hash(new_password)
+
+            connection = get_connection()
+            with connection.cursor() as cursor:
+                sql = "UPDATE users SET password=%s WHERE email=%s"
+                cursor.execute(sql, (hashed_password, email))
+            connection.commit()
 
     except ClientError as e:
         return handle_response(e, f'Error changing temporary password: {str(e)}', 400)
+    except Exception as e:
+        return handle_response(e, f'Unexpected error: {str(e)}', 500)
 
     return {
         'statusCode': 200,

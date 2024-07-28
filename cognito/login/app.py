@@ -1,16 +1,12 @@
 import boto3
 from botocore.exceptions import ClientError
 import json
-
-from jwt.algorithms import RSAAlgorithm
-
 try:
     from db_conection import get_secret, get_connection, handle_response
 except ImportError:
     from .db_conection import get_secret, get_connection, handle_response
 import jwt
-import requests
-import os
+from jwt import PyJWKClient
 
 headers_cors = {
     'Access-Control-Allow-Origin': '*',
@@ -23,7 +19,8 @@ def lambda_handler(event, __):
     secrets = get_secret()
     client_id = secrets['client_id']
     user_pool_id = secrets['user_pool_id']
-    client = boto3.client('cognito-idp', region_name='us-east-1')
+    region = 'us-east-1'
+    client = boto3.client('cognito-idp', region_name=region)
 
     try:
         body_parameters = json.loads(event["body"])
@@ -43,14 +40,20 @@ def lambda_handler(event, __):
         access_token = response['AuthenticationResult']['AccessToken']
         refresh_token = response['AuthenticationResult']['RefreshToken']
 
-        user_groups = client.admin_list_groups_for_user(
-            Username=email,
-            UserPoolId=user_pool_id  # Reemplaza las credenciales
-        )
+        jwk_url = f'https://cognito-idp.{region}.amazonaws.com/{user_pool_id}/.well-known/jwks.json'
+        jwk_client = PyJWKClient(jwk_url)
+        signing_key = jwk_client.get_signing_key_from_jwt(id_token)
+        decoded_token = jwt.decode(id_token, signing_key.key, algorithms=['RS256'], audience=client_id)
 
-        role = None
-        if user_groups['Groups']:
-            role = user_groups['Groups'][0]['GroupName']  # Asumiendo un usuario pertenece a un solo grupo
+        user_groups = decoded_token.get('cognito:groups', [])
+
+        required_roles = ['Admins', 'Clients']
+
+        if not any(role in user_groups for role in required_roles):
+            return {
+                'statusCode': 403,
+                'body': json.dumps('Access denied: User does not have the required role')
+            }
 
         return {
             'statusCode': 200,
@@ -58,18 +61,33 @@ def lambda_handler(event, __):
                 'id_token': id_token,
                 'access_token': access_token,
                 'refresh_token': refresh_token,
-                'role': role
-            })
+                'role': user_groups
+            }),
+            'headers': headers_cors
         }
+
     except ClientError as e:
         return {
             'statusCode': 400,
-            'body': json.dumps({"error": e.response['Error']['Message']})
+            'body': json.dumps({"error": e.response['Error']['Message']}),
+            'headers': headers_cors
+        }
+    except jwt.ExpiredSignatureError:
+        return {
+            'statusCode': 401,
+            'body': json.dumps({"error": "Token expired"}),
+            'headers': headers_cors
+        }
+    except jwt.InvalidTokenError:
+        return {
+            'statusCode': 401,
+            'body': json.dumps({"error": "Invalid token"}),
+            'headers': headers_cors
         }
     except Exception as e:
         return {
             'statusCode': 500,
-            'body': json.dumps({"error": str(e)})
+            'body': json.dumps({"error": str(e)}),
+            'headers': headers_cors
         }
-
 

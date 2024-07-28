@@ -42,13 +42,12 @@ def lambda_handler(event, context):
             Password=new_password
         )
 
+        # Hashear la nueva contraseña
         hashed_password = generate_password_hash(new_password)
 
-        connection = get_connection()
-        with connection.cursor() as cursor:
-            sql = "UPDATE users SET password=%s WHERE email=%s"
-            cursor.execute(sql, (hashed_password, email))
-        connection.commit()
+        # Actualizar la contraseña en la base de datos
+        update_password_in_db(email, hashed_password)
+
     except ClientError as e:
         return handle_response(e, f'Error confirming forgot password: {str(e)}', 400)
 
@@ -58,6 +57,17 @@ def lambda_handler(event, context):
         'body': json.dumps({'message': 'Password has been reset successfully'}),
     }
 
+def update_password_in_db(email, hashed_password):
+    try:
+        connection = get_connection()
+        with connection.cursor() as cursor:
+            sql = "UPDATE users SET password = %s WHERE email = %s"
+            cursor.execute(sql, (hashed_password, email))
+        connection.commit()
+    except Exception as e:
+        raise RuntimeError(f'Failed to update password in the database: {str(e)}')
+    finally:
+        connection.close()
 
 def handle_response(error, message, status_code):
     return {

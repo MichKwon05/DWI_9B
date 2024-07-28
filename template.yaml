@@ -572,6 +572,24 @@ Resources:
             Path: /sign_up
             Method: post
 
+  LogOutFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: cognito/log_out/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Architectures:
+        - x86_64
+      Timeout: 60
+      Events:
+        GetDataStudent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref CognitoApi
+            Path: /log_out
+            Method: post
+
 Outputs:
   HelloWorldFunction:
     Description: "Hello World Lambda Function ARN"
@@ -688,6 +706,13 @@ Outputs:
   SignUpFunction:
     Description: "Sign up Lambda Function ARN"
     Value: !GetAtt SignUpFunction.Arn
+
+  LogOutApi:
+    Description: "API Gateway endpoint URL with path log_out for Prod stage to Cognito Model"
+    Value: !Sub "https://${CognitoApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/log_out"
+  LogOutFunction:
+    Description: "Log Out Lambda Function ARN"
+    Value: !GetAtt LogOutFunction.Arn
 
   LambdaExecutionRoleArn:
     Description: "Lambda Execution Role ARN"

@@ -1,12 +1,12 @@
 import unittest
 #from cognito.sign_up.app import lambda_handler, generate_temporary_password, insert_into_user
 import json
-#from cognito.login.app import lambda_handler
+from cognito.login.app import lambda_handler
 #from cognito.forgot_password.app import lambda_handler
 #from cognito.change_temporary.app import lambda_handler
 #from cognito.confirm_password.app import lambda_handler
 #from cognito.sign_up.app import lambda_handler
-from cognito.log_out.app import lambda_handler
+#from cognito.log_out.app import lambda_handler
 
 mock_body = {
     'body': json.dumps({
@@ -60,5 +60,5 @@ mock_logout = {
 
 class TestSignUpFunction(unittest.TestCase):
     def test_lambda_handler(self):
-        result = lambda_handler(mock_logout, None)
+        result = lambda_handler(mock_body_login, None)
         print(result)

@@ -7,7 +7,13 @@ Description: >
 
 Globals:
   Function:
-    Timeout: 10
+    Timeout: 120
+    MemorySize: 256
+  Api:
+    Cors:
+      AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+      AllowHeaders: "'*'"
+      AllowOrigin: "'*'"
 
 Resources:
   LambdaExecutionRole:
@@ -71,7 +77,6 @@ Resources:
 
   CognitoUserPool:
     Type: AWS::Cognito::UserPool
-    #DeletionPolicy: Retain
     Properties:
       UserPoolName: CognitoUsersBookify
       UsernameAttributes:
@@ -88,20 +93,18 @@ Resources:
 
   AdminUserGroup:
     Type: AWS::Cognito::UserPoolGroup
-    #DeletionPolicy: Retain
     Properties:
       GroupName: Admins
-      UserPoolId: !Ref CognitoUserPool  
+      UserPoolId: !Ref CognitoUserPool
       Precedence: 1
 
   ClientUserGroup:
     Type: AWS::Cognito::UserPoolGroup
-    #DeletionPolicy: Retain
     Properties:
       GroupName: Clients
-      UserPoolId: !Ref CognitoUserPool  
+      UserPoolId: !Ref CognitoUserPool
       Precedence: 2
-#--------------------
+
   UserApi:
     Type: AWS::Serverless::Api
     Properties:
@@ -110,13 +113,11 @@ Resources:
       Cors:
         AllowOrigin: "'*'"
         AllowHeaders: "'*'"
-        AllowMethods:
-          - OPTIONS
-          - POST
-          - GET
-          - PUT
-          - DELETE
-        MaxAge: 600
+        AllowMethods: "'OPTIONS,POST,GET,PUT,DELETE'"
+      Auth:
+        Authorizers:
+          UserAuthorizer:
+            UserPoolArn: !GetAtt CognitoUserPool.Arn
 
   RolApi:
     Type: AWS::Serverless::Api
@@ -126,13 +127,7 @@ Resources:
       Cors:
         AllowOrigin: "'*'"
         AllowHeaders: "'*'"
-        AllowMethods:
-          - OPTIONS
-          - POST
-          - GET
-          - PUT
-          - DELETE
-        MaxAge: 600
+        AllowMethods: "'OPTIONS,POST,GET,PUT,DELETE'"
 
   BookApi:
     Type: AWS::Serverless::Api
@@ -142,13 +137,11 @@ Resources:
       Cors:
         AllowOrigin: "'*'"
         AllowHeaders: "'*'"
-        AllowMethods:
-          - OPTIONS
-          - POST
-          - GET
-          - PUT
-          - DELETE
-        MaxAge: 600
+        AllowMethods: "'OPTIONS,POST,GET,PUT,DELETE'"
+      Auth:
+        Authorizers:
+          BookAuthorizer:
+            UserPoolArn: !GetAtt CognitoUserPool.Arn
 
   CognitoApi:
     Type: AWS::Serverless::Api
@@ -158,13 +151,7 @@ Resources:
       Cors:
         AllowOrigin: "'*'"
         AllowHeaders: "'*'"
-        AllowMethods:
-          - OPTIONS
-          - POST
-          - GET
-          - PUT
-          - DELETE
-        MaxAge: 600
+        AllowMethods: "'OPTIONS,POST,GET,PUT,DELETE'"
 
   UserAuthorizer:
     Type: AWS::ApiGateway::Authorizer
@@ -176,6 +163,15 @@ Resources:
       ProviderARNs:
         - !GetAtt CognitoUserPool.Arn
 
+  BookAuthorizer:
+    Type: AWS::ApiGateway::Authorizer
+    Properties:
+      Name: BookAuthorizerTest
+      IdentitySource: method.request.header.Authorization
+      RestApiId: !Ref BookApi
+      Type: COGNITO_USER_POOLS
+      ProviderARNs:
+        - !GetAtt CognitoUserPool.Arn
 
   HelloWorldFunction:
     Type: AWS::Serverless::Function
@@ -275,6 +271,7 @@ Resources:
       Role: !GetAtt LambdaExecutionRole.Arn
       Architectures:
         - x86_64
+      Timeout: 60
       Events:
         UpdateUser:
           Type: Api
@@ -282,6 +279,8 @@ Resources:
             RestApiId: !Ref UserApi
             Path: /update_user
             Method: put
+            Auth:
+              Authorizer: UserAuthorizer
 
   UpdateUserFunctionPermission:
     Type: AWS::Lambda::Permission
@@ -299,6 +298,7 @@ Resources:
       Role: !GetAtt LambdaExecutionRole.Arn
       Architectures:
         - x86_64
+      Timeout: 60
       Events:
         GetUsers:
           Type: Api
@@ -306,6 +306,8 @@ Resources:
             RestApiId: !Ref UserApi
             Path: /getAll
             Method: get
+            Auth:
+              Authorizer: UserAuthorizer
 
   GetUserAllFunctionPermission:
     Type: AWS::Lambda::Permission
@@ -323,6 +325,7 @@ Resources:
       Role: !GetAtt LambdaExecutionRole.Arn
       Architectures:
         - x86_64
+      Timeout: 60
       Events:
         GetUserById:
           Type: Api
@@ -330,6 +333,8 @@ Resources:
             RestApiId: !Ref UserApi
             Path: /get
             Method: get
+            Auth:
+              Authorizer: UserAuthorizer
 
   GetUserByIdFunctionPermission:
     Type: AWS::Lambda::Permission
@@ -347,6 +352,7 @@ Resources:
       Role: !GetAtt LambdaExecutionRole.Arn
       Architectures:
         - x86_64
+      Timeout: 60
       Events:
         PatchStatus:
           Type: Api
@@ -354,6 +360,8 @@ Resources:
             RestApiId: !Ref UserApi
             Path: /updateStatus
             Method: patch
+            Auth:
+              Authorizer: UserAuthorizer
 
   PatchStatusUserFunctionPermission:
     Type: AWS::Lambda::Permission
@@ -371,6 +379,7 @@ Resources:
       Role: !GetAtt LambdaExecutionRole.Arn
       Architectures:
         - x86_64
+      Timeout: 60
       Events:
         CreateBook:
           Type: Api
@@ -378,6 +387,8 @@ Resources:
             RestApiId: !Ref BookApi
             Path: /create_book
             Method: post
+            Auth:
+              Authorizer: BookAuthorizer
 
   CreateBookFunctionPermission:
     Type: AWS::Lambda::Permission
@@ -395,6 +406,7 @@ Resources:
       Role: !GetAtt LambdaExecutionRole.Arn
       Architectures:
         - x86_64
+      Timeout: 60
       Events:
         UpdateBook:
           Type: Api
@@ -402,6 +414,8 @@ Resources:
             RestApiId: !Ref BookApi
             Path: /update_book
             Method: put
+            Auth:
+              Authorizer: BookAuthorizer
 
   UpdateBookFunctionPermission:
     Type: AWS::Lambda::Permission
@@ -419,6 +433,7 @@ Resources:
       Role: !GetAtt LambdaExecutionRole.Arn
       Architectures:
         - x86_64
+      Timeout: 60
       Events:
         GetBookAll:
           Type: Api
@@ -426,6 +441,8 @@ Resources:
             RestApiId: !Ref BookApi
             Path: /getAll
             Method: get
+            Auth:
+              Authorizer: BookAuthorizer
 
   GetBookAllFunctionPermission:
     Type: AWS::Lambda::Permission
@@ -443,6 +460,7 @@ Resources:
       Role: !GetAtt LambdaExecutionRole.Arn
       Architectures:
         - x86_64
+      Timeout: 60
       Events:
         GetBookById:
           Type: Api
@@ -450,6 +468,8 @@ Resources:
             RestApiId: !Ref BookApi
             Path: /getOne
             Method: get
+            Auth:
+              Authorizer: BookAuthorizer
 
   GetBookByIdFunctionPermission:
     Type: AWS::Lambda::Permission
@@ -467,6 +487,7 @@ Resources:
       Role: !GetAtt LambdaExecutionRole.Arn
       Architectures:
         - x86_64
+      Timeout: 60
       Events:
         PatchBookId:
           Type: Api
@@ -474,6 +495,8 @@ Resources:
             RestApiId: !Ref BookApi
             Path: /patch_status
             Method: patch
+            Auth:
+              Authorizer: BookAuthorizer
 
   PatchBookFunctionPermission:
     Type: AWS::Lambda::Permission

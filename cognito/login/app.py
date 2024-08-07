@@ -1,10 +1,7 @@
 import boto3
 from botocore.exceptions import ClientError
 import json
-try:
-    from db_conection import get_secret, get_connection, handle_response
-except ImportError:
-    from .db_conection import get_secret, get_connection, handle_response
+from db_conection import get_secret, get_connection, handle_response
 import jwt
 from jwt import PyJWKClient
 

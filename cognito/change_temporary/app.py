@@ -2,11 +2,7 @@ import boto3
 from botocore.exceptions import ClientError
 import json
 from werkzeug.security import generate_password_hash
-
-try:
-    from db_conection import get_secret, get_connection, handle_response
-except ImportError:
-    from .db_conection import get_secret, get_connection, handle_response
+from db_conection import get_secret, get_connection, handle_response
 
 headers_cors = {
     'Access-Control-Allow-Origin': '*',

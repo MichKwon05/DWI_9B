@@ -1,9 +1,10 @@
-import json
 import boto3
-try:
-    from db_conection import get_secret, get_connection, handle_response
-except ImportError:
-    from .db_conection import get_secret, get_connection, handle_response
+from botocore.exceptions import ClientError
+from db_conection import get_secret, get_connection, handle_response
+import json
+import string
+import random
+
 headers_cors = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': '*',
@@ -12,105 +13,82 @@ headers_cors = {
 
 
 def lambda_handler(event, context):
+    secrets = get_secret()
     try:
         body = json.loads(event['body'])
-    except (TypeError, KeyError, json.JSONDecodeError):
-        return {
-            'statusCode': 400,
-            'headers': headers_cors,
-            'body': json.dumps({'message': 'Invalid request body.'})
-        }
+    except (TypeError, json.JSONDecodeError) as e:
+        return handle_response(e, 'Error al analizar el cuerpo del evento.', 400)
 
-    password = body.get('password')
     email = body.get('email')
+    password = generate_temporary_password()
+    phone_number = body.get('phone_number')
     name = body.get('name')
     lastname = body.get('lastname')
     second_lastname = body.get('second_lastname')
-    phone = body.get('phone')
-    id_rol = body.get('id_rol')
 
-    if not all([password, email, name, lastname, phone, id_rol]):
-        return {
-            'statusCode': 400,
-            'headers': headers_cors,
-            'body': json.dumps({'message': 'Missing parameters.'})
-        }
+    client = boto3.client('cognito-idp', region_name='us-east-1')
 
     try:
-        secret = get_secret()
-        response = register_user(email, password, name, lastname, second_lastname, phone, id_rol, secret)
-        return response
-    except Exception as e:
-        return {
-            'statusCode': 500,
-            'headers': headers_cors,
-            'body': json.dumps({'message': f'An error occurred: {str(e)}'})
-        }
-
-
-def register_user(email, password, name, lastname, second_lastname, phone, id_rol, secret):
-    try:
-        client = boto3.client('cognito-idp')
-        response = client.sign_up(
-            ClientId=secret['COGNITO_CLIENT_ID'],
+        # Create user in Cognito
+        client.admin_create_user(
+            UserPoolId=secrets['user_pool_id'],
             Username=email,
-            Password=password,
             UserAttributes=[
                 {'Name': 'email', 'Value': email},
-                {'Name': 'name', 'Value': name}
-            ]
+                {'Name': 'email_verified', 'Value': 'false'}
+            ],
+            TemporaryPassword=password
         )
+
+        # Add user to 'clients' group
         client.admin_add_user_to_group(
-            UserPoolId=secret['COGNITO_USER_POOL_ID'],
+            UserPoolId=secrets['user_pool_id'],
             Username=email,
-            GroupName=secret['COGNITO_GROUP_NAME']
+            GroupName='Admins'
         )
-    except Exception as e:
-        return {
-            'statusCode': 500,
-            'headers': headers_cors,
-            'body': json.dumps({'message': f'An error occurred: {str(e)}'})
-        }
 
-    insert_response = insert_into_user(email, response['UserSub'], name, lastname, second_lastname, phone, id_rol,
-                                       password)
-    return insert_response
+        # Insert user into the database
+        insert_into_user(email, name, lastname, second_lastname, phone_number, password)
 
-
-def insert_into_user(email, name, lastname, second_lastname, phone, id_rol, password):
-    connection = get_connection()
-    try:
-        with connection.cursor() as cursor:
-            insert_query = """
-            INSERT INTO users (email, name, lastname, second_lastname, phone, id_rol, password)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-            """
-            cursor.execute(insert_query, (email, name, lastname, second_lastname, phone, id_rol, password))
-            connection.commit()
-    except Exception as e:
-        return {
-            'statusCode': 500,
-            'headers': headers_cors,
-            'body': json.dumps({'message': f'An error occurred: {str(e)}'})
-        }
-    finally:
-        connection.close()
+    except ClientError as e:
+        return handle_response(e, f'Error during registration: {str(e)}', 400)
 
     return {
         'statusCode': 200,
         'headers': headers_cors,
-        'body': json.dumps({'message': 'Record inserted successfully.'})
+        'body': json.dumps({'message': 'User registered successfully, verification email sent'})
     }
 
 
-def verify_role(id_rol):
+def generate_temporary_password(length=12):
+    special_characters = '^$*.[]{}()?-"!@#%&/\\,><\':;|_~`+= '
+    characters = string.ascii_letters + string.digits + special_characters
+
+    while True:
+        password = ''.join(random.choice(characters) for _ in range(length))
+
+        has_digit = any(char.isdigit() for char in password)
+        has_upper = any(char.isupper() for char in password)
+        has_lower = any(char.islower() for char in password)
+        has_special = any(char in special_characters for char in password)
+
+        if has_digit and has_upper and has_lower and has_special and len(password) >= 8:
+            return password
+
+
+def insert_into_user(email, name, lastname, second_lastname, phone_number, password):
     connection = get_connection()
+
     try:
         with connection.cursor() as cursor:
-            cursor.execute("SELECT id_rol FROM roles WHERE id_rol = %s", (id_rol,))
-            result = cursor.fetchone()
-            return result is not None
+            insert_query = """INSERT INTO users (email, name, lastname, second_lastname, phone, password, id_rol, status) VALUES (%s, %s, %s, %s, %s, %s, 1, True)"""
+            cursor.execute(insert_query, (email, name, lastname, second_lastname, phone_number, password))
+            print(f"User {email} inserted successfully.")
+            connection.commit()
+
     except Exception as e:
-        return False
+        print(f"Error al insertar datos: {e}")
+        return handle_response(e, 'Ocurrió un error al registrar el usuario.', 500)
+
     finally:
         connection.close()

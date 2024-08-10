@@ -12,7 +12,7 @@ headers_cors = {
 }
 
 
-def lambda_handler(event, __):
+def lambda_handler(event, context):
     secrets = get_secret()
     client_id = secrets['client_id']
     user_pool_id = secrets['user_pool_id']
@@ -20,10 +20,12 @@ def lambda_handler(event, __):
     client = boto3.client('cognito-idp', region_name=region)
 
     try:
+        # Obtener parámetros del cuerpo de la solicitud
         body_parameters = json.loads(event["body"])
         email = body_parameters.get('email')
         password = body_parameters.get('password')
 
+        # Iniciar la autenticación con Cognito
         response = client.initiate_auth(
             ClientId=client_id,
             AuthFlow='USER_PASSWORD_AUTH',
@@ -33,25 +35,39 @@ def lambda_handler(event, __):
             }
         )
 
+        # Extraer tokens de la respuesta
         id_token = response['AuthenticationResult']['IdToken']
         access_token = response['AuthenticationResult']['AccessToken']
         refresh_token = response['AuthenticationResult']['RefreshToken']
 
+        # URL para obtener el JWK
         jwk_url = f'https://cognito-idp.{region}.amazonaws.com/{user_pool_id}/.well-known/jwks.json'
         jwk_client = PyJWKClient(jwk_url)
-        signing_key = jwk_client.get_signing_key_from_jwt(id_token)
-        decoded_token = jwt.decode(id_token, signing_key.key, algorithms=['RS256'], audience=client_id)
 
+        # Obtener la clave de firma desde el JWK
+        signing_key = jwk_client.get_signing_key_from_jwt(id_token)
+
+        # Decodificar el token usando la clave de firma
+        decoded_token = jwt.decode(
+            id_token,
+            signing_key.key,
+            algorithms=['RS256'],
+            audience=client_id
+        )
+
+        # Obtener los grupos de usuario desde el token decodificado
         user_groups = decoded_token.get('cognito:groups', [])
 
+        # Verificar si el usuario tiene roles requeridos
         required_roles = ['Admins', 'Clients']
-
         if not any(role in user_groups for role in required_roles):
             return {
                 'statusCode': 403,
-                'body': json.dumps('Access denied: User does not have the required role')
+                'body': json.dumps('Access denied: User does not have the required role'),
+                'headers': headers_cors
             }
 
+        # Retornar respuesta exitosa
         return {
             'statusCode': 200,
             'body': json.dumps({
@@ -87,4 +103,3 @@ def lambda_handler(event, __):
             'body': json.dumps({"error": str(e)}),
             'headers': headers_cors
         }
-

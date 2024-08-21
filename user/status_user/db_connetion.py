@@ -69,17 +69,26 @@ def get_jwt_claims(token):
 
 
 def authorized(event, authorized_groups):
-    token = event['headers']['Authorization']
+    headers = event.get('headers', {})
+    token = headers.get('Authorization')
+
+    if not token:
+        return False  # No hay token de autorización
+
     clean_token = token.replace("Bearer ", "")
     claims = get_jwt_claims(clean_token)
+
     if claims is None:
-        return False
+        return False  # El token no es válido
+
     if 'cognito:groups' not in claims:
-        return False
+        return False  # No hay grupos en las reclamaciones del token
+
     for group in authorized_groups:
         if group in claims['cognito:groups']:
-            return True
-    return False
+            return True  # El usuario está autorizado
+
+    return False  # El usuario no pertenece a ningún grupo autorizado
 
 
 def handle_response(error, message, status_code):

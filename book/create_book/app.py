@@ -2,7 +2,7 @@ import json
 import boto3
 import logging
 import uuid
-from db_connection import get_secret, get_connection, handle_response
+from book.create_book.db_connection import get_secret, get_connection, handle_response
 import base64
 
 headers = {

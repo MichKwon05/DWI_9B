@@ -11,9 +11,10 @@ Globals:
     MemorySize: 256
   Api:
     Cors:
-      AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
       AllowHeaders: "'*'"
       AllowOrigin: "'*'"
+      AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+
 
 Resources:
   LambdaExecutionRole:
@@ -161,10 +162,6 @@ Resources:
         AllowOrigin: "'*'"
         AllowHeaders: "'*'"
         AllowMethods: "'OPTIONS,POST,GET,PUT,DELETE,PATCH'"
-      Auth:
-        Authorizers:
-          UserAuthorizer:
-            UserPoolArn: !GetAtt CognitoUserPool.Arn
 
   RolApi:
     Type: AWS::Serverless::Api
@@ -175,6 +172,10 @@ Resources:
         AllowOrigin: "'*'"
         AllowHeaders: "'*'"
         AllowMethods: "'OPTIONS,POST,GET,PUT,DELETE,PATCH'"
+      Auth:
+        Authorizers:
+          RolAuthorizer:
+            UserPoolArn: !GetAtt CognitoUserPool.Arn
 
   BookApi:
     Type: AWS::Serverless::Api
@@ -185,10 +186,6 @@ Resources:
         AllowOrigin: "'*'"
         AllowHeaders: "'*'"
         AllowMethods: "'OPTIONS,POST,GET,PUT,DELETE,PATCH'"
-      Auth:
-        Authorizers:
-          BookAuthorizer:
-            UserPoolArn: !GetAtt CognitoUserPool.Arn
 
   RecommendationApi:
     Type: AWS::Serverless::Api
@@ -199,10 +196,6 @@ Resources:
         AllowOrigin: "'*'"
         AllowHeaders: "'*'"
         AllowMethods: "'OPTIONS,POST,GET,PUT,DELETE,PATCH'"
-      Auth:
-        Authorizers:
-          RecommendationAuthorizer:
-            UserPoolArn: !GetAtt CognitoUserPool.Arn
 
   CognitoApi:
     Type: AWS::Serverless::Api
@@ -220,6 +213,16 @@ Resources:
       Name: UserAuthorizerTest
       IdentitySource: method.request.header.Authorization
       RestApiId: !Ref UserApi
+      Type: COGNITO_USER_POOLS
+      ProviderARNs:
+        - !GetAtt CognitoUserPool.Arn
+
+  RolAuthorizer:
+    Type: AWS::ApiGateway::Authorizer
+    Properties:
+      Name: RolAuthorizerTest
+      IdentitySource: method.request.header.Authorization
+      RestApiId: !Ref RolApi
       Type: COGNITO_USER_POOLS
       ProviderARNs:
         - !GetAtt CognitoUserPool.Arn
@@ -244,20 +247,6 @@ Resources:
       ProviderARNs:
         - !GetAtt CognitoUserPool.Arn
 
-  HelloWorldFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: hello_world/
-      Handler: app.lambda_handler
-      Runtime: python3.12
-      Architectures:
-        - x86_64
-      Events:
-        HelloWorld:
-          Type: Api
-          Properties:
-            Path: /hello
-            Method: get
 
   InsertRolAllFunction:
     Type: AWS::Serverless::Function
@@ -282,7 +271,6 @@ Resources:
       FunctionName: !GetAtt InsertRolAllFunction.Arn
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
-
 
 
   GetRolAllFunction:
@@ -350,8 +338,6 @@ Resources:
             RestApiId: !Ref UserApi
             Path: /update_user
             Method: put
-            Auth:
-              Authorizer: UserAuthorizer
 
   UpdateUserFunctionPermission:
     Type: AWS::Lambda::Permission
@@ -377,8 +363,6 @@ Resources:
             RestApiId: !Ref UserApi
             Path: /getAll
             Method: get
-            Auth:
-              Authorizer: UserAuthorizer
 
   GetUserAllFunctionPermission:
     Type: AWS::Lambda::Permission
@@ -404,8 +388,6 @@ Resources:
             RestApiId: !Ref UserApi
             Path: /get
             Method: get
-            Auth:
-              Authorizer: UserAuthorizer
 
   GetUserByIdFunctionPermission:
     Type: AWS::Lambda::Permission
@@ -431,8 +413,6 @@ Resources:
             RestApiId: !Ref UserApi
             Path: /updateStatus
             Method: patch
-            Auth:
-              Authorizer: UserAuthorizer
 
   PatchStatusUserFunctionPermission:
     Type: AWS::Lambda::Permission
@@ -458,8 +438,6 @@ Resources:
             RestApiId: !Ref BookApi
             Path: /create_book
             Method: post
-            #Auth:
-              #Authorizer: BookAuthorizer
 
   CreateBookFunctionPermission:
     Type: AWS::Lambda::Permission
@@ -485,8 +463,6 @@ Resources:
             RestApiId: !Ref BookApi
             Path: /update_book
             Method: put
-            #Auth:
-              #Authorizer: BookAuthorizer
 
   UpdateBookFunctionPermission:
     Type: AWS::Lambda::Permission
@@ -512,8 +488,6 @@ Resources:
             RestApiId: !Ref BookApi
             Path: /getAll
             Method: get
-            #Auth:
-              #Authorizer: BookAuthorizer
 
   GetBookAllFunctionPermission:
     Type: AWS::Lambda::Permission
@@ -539,8 +513,6 @@ Resources:
             RestApiId: !Ref BookApi
             Path: /getOne
             Method: get
-            #Auth:
-              #Authorizer: BookAuthorizer
 
   GetBookByIdFunctionPermission:
     Type: AWS::Lambda::Permission
@@ -566,8 +538,6 @@ Resources:
             RestApiId: !Ref BookApi
             Path: /patch_status
             Method: patch
-            #Auth:
-              #Authorizer: BookAuthorizer
 
   PatchBookFunctionPermission:
     Type: AWS::Lambda::Permission
@@ -785,9 +755,6 @@ Resources:
       Principal: apigateway.amazonaws.com
 
 Outputs:
-  HelloWorldFunction:
-    Description: "Hello World Lambda Function ARN"
-    Value: !GetAtt HelloWorldFunction.Arn
 
   InsertRolAllFunction:
     Description: "Insert Rol Lambda Function ARN"

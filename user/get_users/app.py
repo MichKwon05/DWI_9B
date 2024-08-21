@@ -9,16 +9,6 @@ headers_cors = {
 
 
 def lambda_handler(event, context):
-    # Verificar autorización
-    if not authorized(event, ['Admins']):
-        return {
-            "statusCode": 403,
-            'headers': headers_cors,
-            "body": json.dumps({
-                'statusCode': 403,
-                'message': 'No autorizado para acceder a este recurso, solo administradores'
-            }),
-        }
 
     connection = get_connection()
     users = []

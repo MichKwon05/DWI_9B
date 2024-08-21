@@ -1,5 +1,5 @@
 import json
-from db_connection import get_secret, get_connection, handle_response
+from book.patch_book.db_connection import get_secret, get_connection, handle_response
 
 headers = {
     'Access-Control-Allow-Headers': '*',

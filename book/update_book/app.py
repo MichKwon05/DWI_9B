@@ -1,5 +1,5 @@
 import json
-from db_connection import get_secret, get_connection, handle_response
+from book.update_book.db_connection import get_secret, get_connection, handle_response
 import base64
 import boto3
 import logging

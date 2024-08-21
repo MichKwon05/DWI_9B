@@ -90,6 +90,20 @@ def authorized(event, authorized_groups):
 
     return False  # El usuario no pertenece a ningún grupo autorizado
 
+def authorized(event, authorized_groups):
+    token = event['headers']['Authorization']
+    clean_token = token.replace("Bearer ", "")
+    claims = get_jwt_claims(clean_token)
+    if claims is None:
+        return False
+    if 'cognito:groups' not in claims:
+        return False
+    for group in authorized_groups:
+        if group in claims['cognito:groups']:
+            return True
+    return False
+
+
 
 def handle_response(error, message, status_code):
     return {

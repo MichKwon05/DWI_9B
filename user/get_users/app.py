@@ -1,5 +1,5 @@
 import json
-from db_connection import get_secret, get_connection, handle_response, authorized
+from user.get_users.db_connection import get_secret, get_connection, handle_response, authorized
 
 headers_cors = {
     'Access-Control-Allow-Origin': '*',

@@ -1,5 +1,5 @@
 import json
-from db_connection import get_secret, get_connection, handle_response
+from recommendations.get_recommendations.db_connection import get_secret, get_connection, handle_response
 
 headers = {
     'Access-Control-Allow-Headers': '*',

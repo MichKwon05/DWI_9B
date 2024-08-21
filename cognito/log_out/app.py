@@ -4,7 +4,7 @@ import json
 try:
     from db_conection import get_secret, get_connection, handle_response
 except ImportError:
-    from .db_conection import get_secret, get_connection, handle_response
+    from cognito.log_out.db_conection import get_secret, get_connection, handle_response
 
 
 headers_cors = {

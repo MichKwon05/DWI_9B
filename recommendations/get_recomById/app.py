@@ -1,6 +1,6 @@
 import json
 import boto3
-from db_connection import get_secret, get_connection, handle_response
+from recommendations.get_recomById.db_connection import get_secret, get_connection, handle_response
 
 headers = {
     'Access-Control-Allow-Headers': '*',

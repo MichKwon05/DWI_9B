@@ -1,6 +1,6 @@
 import boto3
 from botocore.exceptions import ClientError
-from db_conection import get_secret, get_connection, handle_response
+from user.insert_user.db_conection import get_secret, get_connection, handle_response
 import json
 import string
 import random

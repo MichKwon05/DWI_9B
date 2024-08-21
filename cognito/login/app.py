@@ -1,7 +1,7 @@
 import boto3
 from botocore.exceptions import ClientError
 import json
-from db_conection import get_secret, get_connection, handle_response
+from cognito.login.db_conection import get_secret, get_connection, handle_response
 
 headers_cors = {
     'Access-Control-Allow-Origin': '*',

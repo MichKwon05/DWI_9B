@@ -2,7 +2,7 @@ import json
 import jwt
 import requests
 from jwt import PyJWKClient
-from db_connection import get_connection, handle_response, get_secret
+from user.get_userById.db_connection import get_connection, handle_response, get_secret
 
 headers_cors = {
     'Access-Control-Allow-Origin': '*',

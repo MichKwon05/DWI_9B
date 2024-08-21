@@ -4,7 +4,7 @@ import pymysql
 try:
     from db_connection import get_secret, get_connection, handle_response
 except ImportError:
-    from .db_connection import get_secret, get_connection, handle_response
+    from roles.insert_rol.db_connection import get_secret, get_connection, handle_response
 
 
 def lambda_handler(event, context):

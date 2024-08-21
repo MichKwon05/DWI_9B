@@ -2,7 +2,7 @@ import boto3
 from botocore.exceptions import ClientError
 import json
 from werkzeug.security import generate_password_hash
-from db_conection import get_secret, get_connection, handle_response
+from cognito.confirm_password.db_conection import get_secret, get_connection, handle_response
 
 headers_cors = {
     'Access-Control-Allow-Origin': '*',

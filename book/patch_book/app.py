@@ -1,10 +1,10 @@
 import json
-from book.patch_book.db_connection import get_secret, get_connection, handle_response
+from db_connection import get_secret, get_connection, handle_response
 
 headers = {
     'Access-Control-Allow-Headers': '*',
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'PATCH'
+    'Access-Control-Allow-Methods': 'OPTIONS,POST,GET,PUT,PATCH,DELETE'
 }
 
 

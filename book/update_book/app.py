@@ -1,5 +1,5 @@
 import json
-from book.update_book.db_connection import get_secret, get_connection, handle_response
+from db_connection import get_secret, get_connection, handle_response
 import base64
 import boto3
 import logging
@@ -8,7 +8,7 @@ import uuid
 headers = {
     'Access-Control-Allow-Headers': '*',
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'PUT'
+    'Access-Control-Allow-Methods': 'OPTIONS,POST,GET,PUT,DELETE'
 }
 
 

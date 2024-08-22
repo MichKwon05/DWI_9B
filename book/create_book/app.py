@@ -2,13 +2,13 @@ import json
 import boto3
 import logging
 import uuid
-from book.create_book.db_connection import get_secret, get_connection, handle_response
+from db_connection import get_secret, get_connection, handle_response
 import base64
 
 headers = {
     'Access-Control-Allow-Headers': '*',
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'POST'
+    'Access-Control-Allow-Methods': 'OPTIONS,POST,GET,PUT,DELETE'
 }
 
 

@@ -4,7 +4,7 @@ from user.status_user.db_connetion import get_secret, get_connection, handle_res
 headers_cors = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': '*',
-    'Access-Control-Allow-Methods': 'OPTIONS,POST,GET,PUT,DELETE'
+    'Access-Control-Allow-Methods': 'OPTIONS,POST,GET,PUT,PATCH,DELETE'
 }
 
 

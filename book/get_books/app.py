@@ -1,5 +1,5 @@
 import json
-from book.get_books.db_connection import get_secret, get_connection, handle_response
+from db_connection import get_secret, get_connection, handle_response
 
 headers_cors = {
     'Access-Control-Allow-Origin': '*',

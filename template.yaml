@@ -13,7 +13,7 @@ Globals:
     Cors:
       AllowHeaders: "'*'"
       AllowOrigin: "'*'"
-      AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+      AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS,PATCH'"
 
 
 Resources:
@@ -653,6 +653,24 @@ Resources:
             RestApiId: !Ref CognitoApi
             Path: /log_out
             Method: post
+
+  GetProfileFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: user/get_my_profile/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Architectures:
+        - x86_64
+      Timeout: 60
+      Events:
+        GetDataStudent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref CognitoApi
+            Path: /myProfile
+            Method: get
   #---------------------------------------------------------------
   GetRecommendationAllFunction:
     Type: AWS::Serverless::Function
